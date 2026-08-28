@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gift, Loader2, Package } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ export function StoreTab() {
   const { data: profile } = useProfile();
   const updateProfile = useProfileUpdater();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const pendingRequestIds = useRef(new Map<string, string>());
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["store_items"],
@@ -29,11 +30,13 @@ export function StoreTab() {
 
   const redeem = async (id: string) => {
     setBusyId(id);
+    const requestId = pendingRequestIds.current.get(id) ?? crypto.randomUUID();
+    pendingRequestIds.current.set(id, requestId);
     const { data, error } = await supabase.rpc(
       "redeem_reward_v1" as never,
       {
         p_item_id: id,
-        p_client_request_id: crypto.randomUUID(),
+        p_client_request_id: requestId,
       } as never,
     );
     setBusyId(null);
@@ -42,6 +45,7 @@ export function StoreTab() {
       return;
     }
     const res = data as unknown as { new_points: number; protocol: string };
+    pendingRequestIds.current.delete(id);
     updateProfile({ points: Number(res.new_points) });
     qc.invalidateQueries({ queryKey: ["store_items"] });
     toast.success(`Prêmio solicitado! Protocolo: ${res.protocol}`);
