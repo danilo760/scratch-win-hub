@@ -34,6 +34,9 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Install pinned Wrangler
+        run: npm install --no-save --package-lock=false wrangler@4.126.0
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
@@ -84,7 +87,13 @@ jobs:
       - name: Preview Cloudflare production application
         shell: bash
         run: |
-          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/browser-e2e-app.log 2>&1 &
+          nohup npx wrangler dev \
+            --config .output/server/wrangler.json \
+            --ip 127.0.0.1 \
+            --port 4173 \
+            --var "SUPABASE_URL:$SUPABASE_URL" \
+            --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
+            > /tmp/browser-e2e-app.log 2>&1 &
           echo $! > /tmp/browser-e2e-app.pid
 
           for attempt in $(seq 1 60); do
