@@ -25,13 +25,13 @@ function parseSpecialScratchStatus(value: unknown): SpecialScratchStatus {
   }
   const raw = value as Record<string, unknown>;
   return {
-    daily_available: raw.daily_available === true,
-    daily_card_id: typeof raw.daily_card_id === "string" ? raw.daily_card_id : null,
-    daily_title: typeof raw.daily_title === "string" ? raw.daily_title : null,
-    mystery_available: raw.mystery_available === true,
+    daily_available: raw["daily_available"] === true,
+    daily_card_id: typeof raw["daily_card_id"] === "string" ? raw["daily_card_id"] : null,
+    daily_title: typeof raw["daily_title"] === "string" ? raw["daily_title"] : null,
+    mystery_available: raw["mystery_available"] === true,
     mystery_version_id:
-      typeof raw.mystery_version_id === "string" ? raw.mystery_version_id : null,
-    mystery_name: typeof raw.mystery_name === "string" ? raw.mystery_name : null,
+      typeof raw["mystery_version_id"] === "string" ? raw["mystery_version_id"] : null,
+    mystery_name: typeof raw["mystery_name"] === "string" ? raw["mystery_name"] : null,
   };
 }
 
