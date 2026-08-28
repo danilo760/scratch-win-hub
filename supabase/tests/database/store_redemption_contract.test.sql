@@ -20,6 +20,7 @@ values
 update public.store_items set starts_at=now()+interval '1 day' where id='84444444-4444-4444-8444-444444444443';
 
 create temporary table store_contract_results(k text primary key, v jsonb) on commit drop;
+grant select, insert, update, delete on table store_contract_results to authenticated;
 
 select set_config('request.jwt.claims','{"sub":"81111111-1111-4111-8111-111111111111","role":"authenticated"}',true);
 set local role authenticated;
