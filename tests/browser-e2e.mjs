@@ -39,13 +39,24 @@ await mkdir(artifactDir, { recursive: true });
 function attachRuntimeGuards(page, label) {
   const pageErrors = [];
   const consoleErrors = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("pageerror", (error) => pageErrors.push(`${page.url()} :: ${error.message}`));
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() === "error") consoleErrors.push(`${page.url()} :: ${message.text()}`);
   });
-  return () => {
-    assert.deepEqual(pageErrors, [], `${label} emitted uncaught page errors: ${pageErrors.join(" | ")}`);
-    assert.deepEqual(consoleErrors, [], `${label} emitted console errors: ${consoleErrors.join(" | ")}`);
+  return (checkpoint = label) => {
+    const checkpointPageErrors = pageErrors.splice(0);
+    const checkpointConsoleErrors = consoleErrors.splice(0);
+    assert.deepEqual(
+      checkpointPageErrors,
+      [],
+      `${checkpoint} emitted uncaught page errors: ${checkpointPageErrors.join(" | ")}`,
+    );
+    assert.deepEqual(
+      checkpointConsoleErrors,
+      [],
+      `${checkpoint} emitted console errors: ${checkpointConsoleErrors.join(" | ")}`,
+    );
+    console.log(`BROWSER_RUNTIME_CHECKPOINT_OK ${checkpoint} ${page.url()}`);
   };
 }
 
@@ -210,6 +221,7 @@ async function exerciseTouchScratch(browser, email, password) {
   const assertRuntime = attachRuntimeGuards(page, "touch scratch context");
   try {
     await login(page, email, password);
+    assertRuntime("touch login");
     await page.getByRole("tab", { name: "Raspadinhas" }).click();
     const playButton = page.getByRole("button", { name: "Comprar e Jogar" }).first();
     await playButton.waitFor({ state: "visible" });
@@ -235,7 +247,7 @@ async function exerciseTouchScratch(browser, email, password) {
     );
     await assertNoHorizontalOverflow(page, "touch scratch result");
     await page.screenshot({ path: `${artifactDir}/touch-scratch-390x844.png`, fullPage: true });
-    assertRuntime();
+    assertRuntime("touch scratch interaction");
   } finally {
     await context.close();
   }
@@ -283,19 +295,25 @@ try {
     const assertRuntime = attachRuntimeGuards(page, "primary browser context");
 
     await exercisePublicViewports(page);
+    assertRuntime("public viewports + transparency");
     await login(page, email, password);
+    assertRuntime("login");
     await exerciseAuthenticatedViewports(page);
+    assertRuntime("authenticated viewports");
     await exerciseScratchAndStore(page);
+    assertRuntime("scratch + store + rewards");
     await exerciseProfile(page);
+    assertRuntime("profile update + reload");
     await exerciseAdmin(page, userId);
+    assertRuntime("admin operations + math audit");
 
     await page.getByRole("button", { name: "Sair" }).click();
     await page.waitForURL((url) => url.pathname === "/");
     await page.goto(`${baseUrl}/app`);
     await page.waitForURL((url) => url.pathname === "/", { timeout: 10_000 });
     await page.getByRole("button", { name: "Entrar", exact: true }).waitFor({ state: "visible" });
+    assertRuntime("logout + protected route redirect");
 
-    assertRuntime();
     await context.close();
     await exerciseTouchScratch(browser, email, password);
   } finally {
