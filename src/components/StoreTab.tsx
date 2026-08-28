@@ -71,13 +71,10 @@ export function StoreTab() {
     setBusyId(id);
     const requestId = pendingRequestIds.current.get(id) ?? crypto.randomUUID();
     pendingRequestIds.current.set(id, requestId);
-    const { data, error } = await supabase.rpc(
-      "redeem_reward_v1" as never,
-      {
-        p_item_id: id,
-        p_client_request_id: requestId,
-      } as never,
-    );
+    const { data, error } = await supabase.rpc("redeem_reward_v1", {
+      p_item_id: id,
+      p_client_request_id: requestId,
+    });
     setBusyId(null);
 
     if (error) {
