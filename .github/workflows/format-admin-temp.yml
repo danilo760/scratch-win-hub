@@ -1,0 +1,33 @@
+name: Format Admin Temp
+
+on:
+  push:
+    paths:
+      - "src/components/AdminPanel.tsx"
+      - ".github/workflows/format-admin-temp.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format-admin:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --package-lock=false
+      - name: Format AdminPanel
+        run: npx prettier --write src/components/AdminPanel.tsx
+      - name: Verify formatting
+        run: npx prettier --check src/components/AdminPanel.tsx
+      - name: Upload exact formatted file
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-admin-panel
+          path: src/components/AdminPanel.tsx
+          if-no-files-found: error
