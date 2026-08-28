@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as TransparenciaRouteImport } from './routes/transparencia'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as USlugRouteImport } from './routes/u/$slug'
 
@@ -21,6 +22,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransparenciaRoute = TransparenciaRouteImport.update({
+  id: '/transparencia',
+  path: '/transparencia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -36,11 +42,13 @@ const USlugRoute = USlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/transparencia': typeof TransparenciaRoute
   '/app': typeof AuthenticatedAppRoute
   '/u/$slug': typeof USlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/transparencia': typeof TransparenciaRoute
   '/app': typeof AuthenticatedAppRoute
   '/u/$slug': typeof USlugRoute
 }
@@ -48,20 +56,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/transparencia': typeof TransparenciaRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/u/$slug': typeof USlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/u/$slug'
+  fullPaths: '/' | '/transparencia' | '/app' | '/u/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/u/$slug'
-  id: '__root__' | '/' | '/_authenticated' | '/_authenticated/app' | '/u/$slug'
+  to: '/' | '/transparencia' | '/app' | '/u/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/transparencia'
+    | '/_authenticated/app'
+    | '/u/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  TransparenciaRoute: typeof TransparenciaRoute
   USlugRoute: typeof USlugRoute
 }
 
@@ -79,6 +95,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transparencia': {
+      id: '/transparencia'
+      path: '/transparencia'
+      fullPath: '/transparencia'
+      preLoaderRoute: typeof TransparenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app': {
@@ -112,6 +135,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  TransparenciaRoute: TransparenciaRoute,
   USlugRoute: USlugRoute,
 }
 export const routeTree = rootRouteImport
