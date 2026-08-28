@@ -6,7 +6,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useProfile, useProfileUpdater } from "@/hooks/useProfile";
+import { profileQueryKey, useProfile, useProfileUpdater } from "@/hooks/useProfile";
+
+type RedemptionResult = {
+  id: string;
+  protocol: string;
+  status: string;
+  new_points: number;
+  idempotent: boolean;
+};
+
+function readFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parseRedemptionResult(value: unknown): RedemptionResult | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const newPoints = readFiniteNumber(raw.new_points);
+  if (
+    typeof raw.id !== "string" ||
+    typeof raw.protocol !== "string" ||
+    raw.protocol.trim() === "" ||
+    typeof raw.status !== "string" ||
+    newPoints === null
+  ) {
+    return null;
+  }
+  return {
+    id: raw.id,
+    protocol: raw.protocol,
+    status: raw.status,
+    new_points: newPoints,
+    idempotent: raw.idempotent === true,
+  };
+}
 
 export function StoreTab() {
   const qc = useQueryClient();
@@ -40,14 +79,25 @@ export function StoreTab() {
       } as never,
     );
     setBusyId(null);
+
     if (error) {
       toast.error(error.message);
       return;
     }
-    const res = data as unknown as { new_points: number; protocol: string };
+
+    const res = parseRedemptionResult(data);
+    if (!res) {
+      toast.error("O servidor retornou uma resposta de resgate inválida. Tente novamente.");
+      return;
+    }
+
     pendingRequestIds.current.delete(id);
-    updateProfile({ points: Number(res.new_points) });
-    qc.invalidateQueries({ queryKey: ["store_items"] });
+    updateProfile({ points: res.new_points });
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: profileQueryKey }),
+      qc.invalidateQueries({ queryKey: ["store_items"] }),
+      qc.invalidateQueries({ queryKey: ["my-rewards"] }),
+    ]);
     toast.success(`Prêmio solicitado! Protocolo: ${res.protocol}`);
   };
 
