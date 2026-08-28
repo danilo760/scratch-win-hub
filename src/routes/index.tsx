@@ -53,7 +53,10 @@ function AuthPage() {
           });
     const { data, error } = await fn;
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (!data.session) {
       toast.success("Conta criada! Confirme seu e-mail para entrar.");
       return;

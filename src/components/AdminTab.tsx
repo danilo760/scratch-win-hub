@@ -31,7 +31,10 @@ export function AdminTab() {
       active: true,
     });
     setSavingCard(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Raspadinha criada com sucesso!");
     setCardForm({ title: "", price: "1.00", points_reward: "10" });
     qc.invalidateQueries({ queryKey: ["scratchcards"] });
@@ -48,7 +51,10 @@ export function AdminTab() {
       active: true,
     });
     setSavingItem(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Item criado com sucesso!");
     setItemForm({ title: "", description: "", points_cost: "100", stock: "10" });
     qc.invalidateQueries({ queryKey: ["store_items"] });
