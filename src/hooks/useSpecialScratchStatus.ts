@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const specialScratchStatusQueryKey = ["special-scratch-status"] as const;
 
 export type SpecialScratchStatus = {
+  daily_configured: boolean;
+  daily_claimed_today: boolean;
   daily_available: boolean;
   daily_card_id: string | null;
   daily_title: string | null;
@@ -15,6 +17,8 @@ export type SpecialScratchStatus = {
 function parseSpecialScratchStatus(value: unknown): SpecialScratchStatus {
   if (!value || typeof value !== "object") {
     return {
+      daily_configured: false,
+      daily_claimed_today: false,
       daily_available: false,
       daily_card_id: null,
       daily_title: null,
@@ -25,6 +29,8 @@ function parseSpecialScratchStatus(value: unknown): SpecialScratchStatus {
   }
   const raw = value as Record<string, unknown>;
   return {
+    daily_configured: raw["daily_configured"] === true,
+    daily_claimed_today: raw["daily_claimed_today"] === true,
     daily_available: raw["daily_available"] === true,
     daily_card_id: typeof raw["daily_card_id"] === "string" ? raw["daily_card_id"] : null,
     daily_title: typeof raw["daily_title"] === "string" ? raw["daily_title"] : null,
