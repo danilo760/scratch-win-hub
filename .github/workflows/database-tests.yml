@@ -49,8 +49,11 @@ jobs:
           set -a
           source /tmp/supabase.env
           set +a
-          export SUPABASE_URL="${API_URL}"
-          export SUPABASE_ANON_KEY="${ANON_KEY}"
-          export SUPABASE_SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY}"
+          export SUPABASE_URL="${API_URL:-${SUPABASE_URL:-}}"
+          export SUPABASE_ANON_KEY="${ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}"
+          export SUPABASE_SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-${SECRET_KEY:-${SUPABASE_SECRET_KEY:-}}}"
           export PHASE15_ALLOW_LOCAL_TESTS=true
+          test -n "${SUPABASE_URL}" || { echo "Missing local Supabase URL"; exit 1; }
+          test -n "${SUPABASE_ANON_KEY}" || { echo "Missing local Supabase publishable/anon key"; exit 1; }
+          test -n "${SUPABASE_SERVICE_ROLE_KEY}" || { echo "Missing local Supabase secret/service-role key"; exit 1; }
           node tests/phase15-concurrency.integration.mjs
