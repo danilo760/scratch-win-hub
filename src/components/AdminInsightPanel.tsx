@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const dashboardQueryKey = ["admin-dashboard-v1"] as const;
-const mathConfigQueryKey = ["admin-math-config"] as const;
+const mathConfigQueryKey = ["admin-math-config", "insight"] as const;
 
 type DashboardCards = {
   plays_today: number;
