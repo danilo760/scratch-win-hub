@@ -1,15 +1,24 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, Loader2, Ticket, Sparkles } from "lucide-react";
+import { Loader2, Ticket, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScratchCard } from "@/components/ScratchCard";
+import { ScratchCard, type ScratchRarity } from "@/components/ScratchCard";
 import { formatBRL, profileQueryKey, useProfileUpdater } from "@/hooks/useProfile";
 
 type ResultType = "none" | "points" | "credits" | "combined";
+
+type ActiveCard = {
+  id: string;
+  title: string;
+  price: number;
+  math_version_id: string;
+  rarity_slug: ScratchRarity;
+  rarity_name: string;
+};
 
 type PlayResult = {
   id: string;
@@ -18,9 +27,16 @@ type PlayResult = {
   new_points: number;
   points_earned: number;
   math_version_id: string;
+  rarity_slug: ScratchRarity;
   result_type: ResultType;
   idempotent: boolean;
 };
+
+const raritySlugs = ["bronze", "prata", "ouro", "diamante"] as const;
+
+function isScratchRarity(value: unknown): value is ScratchRarity {
+  return typeof value === "string" && (raritySlugs as readonly string[]).includes(value);
+}
 
 function readFiniteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -29,6 +45,35 @@ function readFiniteNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function parseActiveCards(value: unknown): ActiveCard[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const raw = entry as Record<string, unknown>;
+    const price = readFiniteNumber(raw.price);
+    if (
+      typeof raw.id !== "string" ||
+      typeof raw.title !== "string" ||
+      typeof raw.math_version_id !== "string" ||
+      typeof raw.rarity_name !== "string" ||
+      price === null ||
+      !isScratchRarity(raw.rarity_slug)
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: raw.id,
+        title: raw.title,
+        price,
+        math_version_id: raw.math_version_id,
+        rarity_slug: raw.rarity_slug,
+        rarity_name: raw.rarity_name,
+      },
+    ];
+  });
 }
 
 function parsePlayResult(value: unknown): PlayResult | null {
@@ -47,6 +92,7 @@ function parsePlayResult(value: unknown): PlayResult | null {
     newBalance === null ||
     newPoints === null ||
     pointsEarned === null ||
+    !isScratchRarity(raw.rarity_slug) ||
     !["none", "points", "credits", "combined"].includes(String(resultType))
   ) {
     return null;
@@ -59,6 +105,7 @@ function parsePlayResult(value: unknown): PlayResult | null {
     new_points: newPoints,
     points_earned: pointsEarned,
     math_version_id: raw.math_version_id,
+    rarity_slug: raw.rarity_slug,
     result_type: resultType as ResultType,
     idempotent: raw.idempotent === true,
   };
@@ -71,16 +118,12 @@ export function GameTab() {
   const [result, setResult] = useState<(PlayResult & { title: string }) | null>(null);
   const pendingRequestIds = useRef(new Map<string, string>());
 
-  const { data: cards, isLoading } = useQuery({
-    queryKey: ["scratchcards"],
+  const { data: cards = [], isLoading } = useQuery({
+    queryKey: ["active-scratchcards"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("scratchcards")
-        .select("id, title, price, points_reward")
-        .eq("active", true)
-        .order("price");
+      const { data, error } = await supabase.rpc("get_active_scratchcards_v1" as never);
       if (error) throw error;
-      return data;
+      return parseActiveCards(data);
     },
   });
 
@@ -127,6 +170,7 @@ export function GameTab() {
           <ScratchCard
             prize={result.prize}
             pointsEarned={result.points_earned}
+            rarity={result.rarity_slug}
             onReset={() => setResult(null)}
           />
         </CardContent>
@@ -142,9 +186,11 @@ export function GameTab() {
     );
   }
 
-  if (!cards?.length) {
+  if (!cards.length) {
     return (
-      <p className="py-16 text-center text-muted-foreground">Nenhuma raspadinha disponível.</p>
+      <p className="py-16 text-center text-muted-foreground">
+        Nenhuma raspadinha com matemática publicada está disponível.
+      </p>
     );
   }
 
@@ -159,14 +205,15 @@ export function GameTab() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-black text-success">
-                {formatBRL(Number(card.price))}
-              </span>
-              <Badge variant="secondary" className="gap-1">
-                <Coins className="size-3.5 text-accent" />+{card.points_reward} pts
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
+              <Badge variant="secondary" className="capitalize">
+                {card.rarity_name}
               </Badge>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Resultado calculado pela versão matemática publicada antes da revelação.
+            </p>
             <Button
               variant="glow"
               className="w-full"
@@ -175,7 +222,7 @@ export function GameTab() {
             >
               {playingId === card.id ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" /> Comprando...
+                  <Loader2 className="size-4 animate-spin" /> Processando...
                 </>
               ) : (
                 "Comprar e Jogar"
