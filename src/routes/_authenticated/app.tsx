@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
+import { MathAdminPanel } from "@/components/MathAdminPanel";
 
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
 
@@ -503,15 +504,7 @@ function AdminPanel() {
           </Card>
         ))}
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Administração de raspadinhas</CardTitle>
-          <CardDescription>
-            O fluxo legado de sorteios foi retirado. As ferramentas administrativas de raspadinhas
-            serão exibidas aqui usando o schema real do motor matemático.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <MathAdminPanel />
     </div>
   );
 }
