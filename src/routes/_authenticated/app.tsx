@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
   Coins,
   Dices,
@@ -28,6 +28,7 @@ import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
 import { MathAdminPanel } from "@/components/MathAdminPanel";
+import { DailyScratchPanel, MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
 
@@ -170,102 +171,6 @@ function Dashboard() {
         </Tabs>
       </main>
     </div>
-  );
-}
-
-function DailyScratchPanel() {
-  const { data: cards = [] } = useQuery({
-    queryKey: ["daily-cards"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("scratchcards")
-        .select("id,title")
-        .eq("active", true)
-        .eq("is_daily_eligible", true)
-        .limit(1);
-      if (error) throw error;
-      return data;
-    },
-  });
-  const [busy, setBusy] = useState(false);
-  const pendingRequestId = useRef<string | null>(null);
-
-  const claim = async () => {
-    if (!cards[0]) return;
-    setBusy(true);
-    pendingRequestId.current ??= crypto.randomUUID();
-    const { data, error } = await supabase.rpc(
-      "claim_daily_scratch_v1" as never,
-      { p_card_id: cards[0].id, p_client_request_id: pendingRequestId.current } as never,
-    );
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else {
-      pendingRequestId.current = null;
-      toast.success(
-        (data as { already_claimed?: boolean }).already_claimed
-          ? "Sua cortesia de hoje já foi usada."
-          : "Cortesia diária registrada!",
-      );
-    }
-  };
-
-  return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader>
-        <CardTitle>🎁 Raspadinha diária</CardTitle>
-        <CardDescription>
-          O limite é calculado no servidor pelo horário de Brasília.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {cards[0] ? (
-          <Button className="w-full" disabled={busy} onClick={claim}>
-            {busy ? <Loader2 className="animate-spin" /> : "Resgatar cortesia"}
-          </Button>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Próxima raspadinha diária será disponibilizada pelo administrador.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function MysteryScratchPanel() {
-  const [busy, setBusy] = useState(false);
-  const pendingRequestId = useRef<string | null>(null);
-
-  const open = async () => {
-    setBusy(true);
-    pendingRequestId.current ??= crypto.randomUUID();
-    const { data, error } = await supabase.rpc(
-      "open_mystery_scratch_v1" as never,
-      { p_client_request_id: pendingRequestId.current } as never,
-    );
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else {
-      pendingRequestId.current = null;
-      toast.success("Raridade selecionada e registrada com segurança.");
-    }
-  };
-
-  return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader>
-        <CardTitle>🎁 Raspadinha misteriosa</CardTitle>
-        <CardDescription>
-          A raridade é escolhida pelo pool publicado antes da revelação visual.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button className="w-full" variant="glow" disabled={busy} onClick={open}>
-          {busy ? <Loader2 className="animate-spin" /> : "Abrir misteriosa"}
-        </Button>
-      </CardContent>
-    </Card>
   );
 }
 
