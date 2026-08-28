@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import {
   Coins,
   Dices,
@@ -257,21 +257,25 @@ function DailyScratchPanel() {
     },
   });
   const [busy, setBusy] = useState(false);
+  const pendingRequestId = useRef<string | null>(null);
   const claim = async () => {
     if (!cards[0]) return;
     setBusy(true);
+    pendingRequestId.current ??= crypto.randomUUID();
     const { data, error } = await supabase.rpc(
       "claim_daily_scratch_v1" as never,
-      { p_card_id: cards[0].id, p_client_request_id: crypto.randomUUID() } as never,
+      { p_card_id: cards[0].id, p_client_request_id: pendingRequestId.current } as never,
     );
     setBusy(false);
     if (error) toast.error(error.message);
-    else
+    else {
+      pendingRequestId.current = null;
       toast.success(
         (data as { already_claimed?: boolean }).already_claimed
           ? "Sua cortesia de hoje já foi usada."
           : "Cortesia diária registrada!",
       );
+    }
   };
   return (
     <Card className="mx-auto max-w-md">
@@ -298,15 +302,20 @@ function DailyScratchPanel() {
 
 function MysteryScratchPanel() {
   const [busy, setBusy] = useState(false);
+  const pendingRequestId = useRef<string | null>(null);
   const open = async () => {
     setBusy(true);
+    pendingRequestId.current ??= crypto.randomUUID();
     const { data, error } = await supabase.rpc(
       "open_mystery_scratch_v1" as never,
-      { p_client_request_id: crypto.randomUUID() } as never,
+      { p_client_request_id: pendingRequestId.current } as never,
     );
     setBusy(false);
     if (error) toast.error(error.message);
-    else toast.success("Raridade selecionada e registrada com segurança.");
+    else {
+      pendingRequestId.current = null;
+      toast.success("Raridade selecionada e registrada com segurança.");
+    }
   };
   return (
     <Card className="mx-auto max-w-md">
