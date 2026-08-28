@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: browser-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   browser-e2e:
     runs-on: ubuntu-latest
@@ -93,6 +97,12 @@ jobs:
       - name: Run real browser flows
         run: node tests/browser-e2e.mjs
 
+      - name: Collect application log
+        if: always()
+        run: |
+          mkdir -p playwright-artifacts
+          cp /tmp/browser-e2e-app.log playwright-artifacts/application.log 2>/dev/null || true
+
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -100,9 +110,7 @@ jobs:
           name: browser-e2e-evidence
           if-no-files-found: warn
           retention-days: 7
-          path: |
-            playwright-artifacts
-            /tmp/browser-e2e-app.log
+          path: playwright-artifacts
 
       - name: Stop isolated Supabase
         if: always()
