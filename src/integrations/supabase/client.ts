@@ -7,30 +7,6 @@ import {
   SUPABASE_PUBLIC_URL,
 } from "./public-config";
 
-function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
-}
-
-function createSupabaseFetch(supabaseKey: string): typeof fetch {
-  return (input, init) => {
-    const headers = new Headers(
-      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
-    );
-
-    if (init?.headers) {
-      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
-    }
-
-    // New Supabase API keys are opaque strings, not bearer JWTs.
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get("Authorization") === `Bearer ${supabaseKey}`) {
-      headers.delete("Authorization");
-    }
-
-    headers.set("apikey", supabaseKey);
-    return fetch(input, { ...init, headers });
-  };
-}
-
 function createSupabaseClient() {
   // VITE_* values override the public fallback in public-config.ts.
   // Never read process.env from browser code: Lovable preview builds may not expose it.
@@ -43,10 +19,10 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // Pass publishable keys directly to supabase-js. Current Supabase clients and
+  // gateways own the apikey/Authorization header contract; rewriting those headers
+  // here can break password sign-in and authenticated requests.
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    global: {
-      fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
-    },
     auth: {
       storage: brokeredPreviewStorage(),
       persistSession: true,
