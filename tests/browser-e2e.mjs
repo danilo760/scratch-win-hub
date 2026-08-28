@@ -21,10 +21,15 @@ function requireLocalUrl(name, value) {
 
 const baseUrl = requireLocalUrl("E2E_BASE_URL", process.env.E2E_BASE_URL);
 const supabaseUrl = requireLocalUrl("SUPABASE_URL", process.env.SUPABASE_URL);
+const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+assert.ok(publishableKey, "SUPABASE_PUBLISHABLE_KEY is required for browser auth validation");
 assert.ok(serviceRoleKey, "SUPABASE_SERVICE_ROLE_KEY is required for isolated fixture setup");
 
 const admin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+const publicAuth = createClient(supabaseUrl, publishableKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
@@ -64,12 +69,29 @@ async function assertNoHorizontalOverflow(page, label) {
 }
 
 async function login(page, email, password) {
-  await page.goto(`${baseUrl}/`);
-  await page.locator("#login-email").fill(email);
-  await page.locator("#login-password").fill(password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/app", { timeout: 15_000 });
-  await page.getByRole("tab", { name: "Início" }).waitFor({ state: "visible" });
+  const authStatuses = [];
+  const recordAuth = (response) => {
+    if (response.url().includes("/auth/v1/token")) authStatuses.push(response.status());
+  };
+  page.on("response", recordAuth);
+  try {
+    await page.goto(`${baseUrl}/`);
+    await page.locator("#login-email").fill(email);
+    await page.locator("#login-password").fill(password);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    try {
+      await page.waitForURL((url) => url.pathname === "/app", { timeout: 15_000 });
+    } catch (error) {
+      const body = (await page.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 800);
+      throw new Error(
+        `Browser login did not reach /app; auth token HTTP statuses=[${authStatuses.join(",")}], current=${page.url()}, body=${JSON.stringify(body)}`,
+        { cause: error },
+      );
+    }
+    await page.getByRole("tab", { name: "Início" }).waitFor({ state: "visible" });
+  } finally {
+    page.off("response", recordAuth);
+  }
 }
 
 async function exercisePublicViewports(page) {
@@ -214,6 +236,14 @@ try {
   assert.equal(profile.is_admin, false, "browser fixture must not become admin");
   assert.ok(profile.display_name, "signup trigger must create display_name");
   assert.ok(profile.public_slug, "signup trigger must create public_slug");
+
+  const { data: authCheck, error: authCheckError } = await publicAuth.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (authCheckError) throw new Error(`Local publishable-key password sign-in failed: ${authCheckError.message}`);
+  assert.equal(authCheck.user?.id, userId, "publishable-key auth returned the wrong local user");
+  await publicAuth.auth.signOut();
 
   const browser = await chromium.launch({ headless: true });
   try {
