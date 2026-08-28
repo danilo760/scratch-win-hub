@@ -39,7 +39,7 @@ export function useSpecialScratchStatus() {
   return useQuery({
     queryKey: specialScratchStatusQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_special_scratch_status_v1" as never);
+      const { data, error } = await supabase.rpc("get_special_scratch_status_v1");
       if (error) throw error;
       return parseSpecialScratchStatus(data);
     },
