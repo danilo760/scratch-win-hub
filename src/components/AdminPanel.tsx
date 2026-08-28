@@ -11,13 +11,21 @@ import { Badge } from "@/components/ui/badge";
 export function AdminPanel() {
   return (
     <section className="space-y-6" aria-labelledby="admin-panel-title">
-      <header className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-5 shadow-sm sm:p-6">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/5" />
-        <div className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-primary/10 blur-3xl" />
+      <header
+        className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-5 shadow-sm sm:p-6"
+      >
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/5"
+        />
+        <div
+          className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-primary/10 blur-3xl"
+        />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl space-y-2">
             <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+              <div
+                className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm"
+              >
                 <ShieldCheck className="size-5" aria-hidden="true" />
               </div>
               <div>
@@ -65,7 +73,9 @@ export function AdminPanel() {
             <Sparkles className="size-3.5" aria-hidden="true" /> Visão executiva
           </Badge>
         </div>
-        <div className="rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30">
+        <div
+          className="rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30"
+        >
           <AdminInsightPanel />
         </div>
       </section>
@@ -85,7 +95,9 @@ export function AdminPanel() {
           </div>
           <Badge variant="outline">Configuração operacional</Badge>
         </div>
-        <div className="rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30">
+        <div
+          className="rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30"
+        >
           <AdminWorkspace />
         </div>
       </section>
