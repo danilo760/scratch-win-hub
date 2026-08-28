@@ -53,4 +53,4 @@ jobs:
           export SUPABASE_ANON_KEY="${ANON_KEY}"
           export SUPABASE_SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY}"
           export PHASE15_ALLOW_LOCAL_TESTS=true
-          node tests/phase15-concurrency.test.mjs
+          node tests/phase15-concurrency.integration.mjs
