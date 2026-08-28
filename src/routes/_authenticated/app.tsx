@@ -478,6 +478,14 @@ function AdminPanel() {
   const [price, setPrice] = useState(10);
   const [total, setTotal] = useState(100);
   const [description, setDescription] = useState("");
+  const { data: dashboard } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_admin_dashboard_v1" as never);
+      if (error) throw error;
+      return data as unknown as { cards: Record<string, number> };
+    },
+  });
   const create = async () => {
     const { error } = await supabase
       .from("raffles")
@@ -489,36 +497,48 @@ function AdminPanel() {
     }
   };
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Administração de sorteios</CardTitle>
-        <CardDescription>Cadastre novos prêmios e acompanhe a operação.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label>Título</Label>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Nome do prêmio"
-          />
-        </div>
-        <div>
-          <Label>Preço do bilhete (créditos)</Label>
-          <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
-        </div>
-        <div>
-          <Label>Total de bilhetes</Label>
-          <Input type="number" value={total} onChange={(e) => setTotal(Number(e.target.value))} />
-        </div>
-        <div>
-          <Label>Descrição</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-        <Button className="sm:col-span-2" onClick={create}>
-          Criar sorteio
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Object.entries(dashboard?.cards ?? {}).map(([key, value]) => (
+          <Card key={key}>
+            <CardContent className="p-4">
+              <p className="text-xs capitalize text-muted-foreground">{key.replaceAll("_", " ")}</p>
+              <strong className="text-2xl">{value}</strong>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Administração de sorteios</CardTitle>
+          <CardDescription>Cadastre novos prêmios e acompanhe a operação.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>Título</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nome do prêmio"
+            />
+          </div>
+          <div>
+            <Label>Preço do bilhete (créditos)</Label>
+            <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Total de bilhetes</Label>
+            <Input type="number" value={total} onChange={(e) => setTotal(Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Descrição</Label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <Button className="sm:col-span-2" onClick={create}>
+            Criar sorteio
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
