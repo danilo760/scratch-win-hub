@@ -309,7 +309,11 @@ try {
 
     await page.getByRole("button", { name: "Sair" }).click();
     await page.waitForURL((url) => url.pathname === "/");
-    await page.goto(`${baseUrl}/app`);
+    try {
+      await page.goto(`${baseUrl}/app`);
+    } catch (error) {
+      if (!String(error).includes("net::ERR_ABORTED")) throw error;
+    }
     await page.waitForURL((url) => url.pathname === "/", { timeout: 10_000 });
     await page.getByRole("button", { name: "Entrar", exact: true }).waitFor({ state: "visible" });
     assertRuntime("logout + protected route redirect");
