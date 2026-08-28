@@ -113,6 +113,43 @@ do $$ begin
     if position('Sem permissão' in sqlerrm)=0 then raise exception 'unexpected admin denial: %',sqlerrm; end if;
   end;
 end $$;
+do $$
+declare
+  v_action text;
+begin
+  foreach v_action in array array['math draft', 'scratchcard upsert', 'redemption transition']
+  loop
+    begin
+      if v_action = 'math draft' then
+        perform public.create_math_draft_v1(
+          '30303030-3030-4030-8030-303030303030',
+          'UNAUTHORIZED-DRAFT',
+          'bronze'
+        );
+      elsif v_action = 'scratchcard upsert' then
+        perform public.admin_upsert_scratchcard_v1(
+          'UNAUTHORIZED-SCRATCHCARD',
+          1,
+          true,
+          false,
+          null
+        );
+      else
+        perform public.admin_update_redemption_v1(
+          '11111111-dddd-4111-8111-111111111111',
+          'APROVADO',
+          null
+        );
+      end if;
+      raise exception 'regular user executed %', v_action;
+    exception when others then
+      if sqlerrm = format('regular user executed %s', v_action) then raise; end if;
+      if position('Sem permissão' in sqlerrm) = 0 then
+        raise exception 'unexpected % denial: %', v_action, sqlerrm;
+      end if;
+    end;
+  end loop;
+end $$;
 reset role;
 
 select set_config('request.jwt.claims','{"sub":"20202020-2020-4020-8020-202020202020","role":"authenticated"}',true);
@@ -120,6 +157,6 @@ set local role authenticated;
 select pg_temp.assert_owner_isolation('B','20202020-2020-4020-8020-202020202020','10101010-1010-4010-8010-101010101010');
 reset role;
 
-select extensions.pass('USER_A and USER_B remain isolated, public profiles respect privacy, and regular users cannot call admin RPCs');
+select extensions.pass('USER_A and USER_B remain isolated, public profiles respect privacy, and regular users cannot call read or mutation admin RPCs');
 select * from extensions.finish();
 rollback;
