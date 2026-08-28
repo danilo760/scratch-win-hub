@@ -44,7 +44,7 @@ export function DailyScratchPanel() {
     ]);
     const raw = data as Record<string, unknown>;
     toast.success(
-      raw.already_claimed === true
+      raw["already_claimed"] === true
         ? "Sua cortesia de hoje já foi usada."
         : "Cortesia diária registrada com sucesso!",
     );
