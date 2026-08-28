@@ -235,6 +235,42 @@ async function exerciseAdmin(page, userId) {
   await assertNoHorizontalOverflow(page, "admin math audit");
   await page.screenshot({ path: `${artifactDir}/admin-math-audit-1440x900.png`, fullPage: true });
 
+  const adminSections = [
+    ["Visão Geral", "Operação de raspadinhas"],
+    ["Raspadinhas", "Cadastros operacionais e versão publicada atual."],
+    ["Versões Matemáticas", "Versões e resultados"],
+    ["Resultados", "Resultados matemáticos"],
+    ["Raridades", "Raridades"],
+    ["Diária", "Configuração da Diária"],
+    ["Misteriosa", "Pool e pesos"],
+    ["Loja", "Itens da loja"],
+    ["Resgates", "Resgates"],
+    ["Conquistas", "Conquistas"],
+    ["Usuários", "Usuários"],
+    ["Ledger", "Ledger de créditos"],
+    ["Auditoria", "Auditoria"],
+    ["Simulador", "Simulador"],
+  ];
+
+  for (const [tabName, evidence] of adminSections) {
+    await page.getByRole("tab", { name: tabName, exact: true }).click();
+    await page.getByText(evidence, { exact: true }).first().waitFor({ state: "visible" });
+    await assertNoBlankScreen(page, `admin ${tabName}`);
+    await assertNoHorizontalOverflow(page, `admin ${tabName}`);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("tab", { name: "Raspadinhas", exact: true }).click();
+  await page
+    .getByText("Cadastros operacionais e versão publicada atual.", { exact: true })
+    .first()
+    .waitFor({ state: "visible" });
+  await assertNoHorizontalOverflow(page, "admin mobile raspadinhas");
+  await page.getByRole("tab", { name: "Resgates", exact: true }).click();
+  await page.getByText("Resgates", { exact: true }).first().waitFor({ state: "visible" });
+  await assertNoHorizontalOverflow(page, "admin mobile resgates");
+  await page.screenshot({ path: `${artifactDir}/admin-mobile-390x844.png`, fullPage: true });
+
   const { error: demoteError } = await admin
     .from("profiles")
     .update({ is_admin: false })
