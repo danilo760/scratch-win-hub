@@ -104,6 +104,9 @@ jobs:
           cat /tmp/browser-e2e-app.log
           exit 1
 
+      - name: Run hydration diagnostic
+        run: node tests/hydration-diagnostic.mjs
+
       - name: Run real browser flows
         run: node tests/browser-e2e.mjs
 
