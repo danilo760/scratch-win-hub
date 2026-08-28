@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useState } from "react";
 import {
@@ -170,13 +169,17 @@ function MyRewards() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-rewards"],
     queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sessão inválida");
+
       const { data, error } = await supabase
         .from("redemptions")
         .select(
           "id, points_spent, status, protocol, fulfillment_code, created_at, store_items(title, image_url)",
         )
-        .eq("user_id", user.user?.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -193,7 +196,7 @@ function MyRewards() {
       </CardHeader>
       <CardContent className="space-y-3">
         {data?.length ? (
-          data.map((reward: any) => (
+          data.map((reward) => (
             <div key={reward.id} className="flex items-center gap-3 rounded-lg border p-3">
               {reward.store_items?.image_url && (
                 <img
@@ -227,48 +230,60 @@ function MyRewards() {
   );
 }
 
+type ProfilePreferencesForm = {
+  display_name: string;
+  public_slug: string;
+  avatar_url: string | null;
+  profile_public: boolean;
+  show_achievements: boolean;
+  show_statistics: boolean;
+};
+
 function ProfilePreferences() {
   const queryClient = useQueryClient();
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile-preferences"],
-    queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
+    queryFn: async (): Promise<ProfilePreferencesForm> => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sessão inválida");
+
       const { data, error } = await supabase
         .from("profiles")
         .select(
           "display_name, public_slug, avatar_url, profile_public, show_achievements, show_statistics",
         )
-        .eq("id", user.user?.id)
+        .eq("id", user.id)
         .single();
       if (error) throw error;
       return data;
     },
   });
 
-  const [form, setForm] = useState<Record<string, string | boolean> | null>(null);
+  const [form, setForm] = useState<ProfilePreferencesForm | null>(null);
   const value = form ?? profile;
 
   if (isLoading || !value) return <Loader2 className="animate-spin" />;
 
-  const update = (key: string, next: string | boolean) => setForm({ ...value, [key]: next });
+  const update = <K extends keyof ProfilePreferencesForm>(key: K, next: ProfilePreferencesForm[K]) => {
+    setForm({ ...value, [key]: next });
+  };
 
   const save = async () => {
-    const { error } = await supabase.rpc(
-      "update_profile_preferences" as never,
-      {
-        p_display_name: value.display_name,
-        p_public_slug: value.public_slug,
-        p_avatar_url: value.avatar_url ?? "",
-        p_profile_public: value.profile_public,
-        p_show_achievements: value.show_achievements,
-        p_show_statistics: value.show_statistics,
-      } as never,
-    );
+    const { error } = await supabase.rpc("update_profile_preferences", {
+      p_display_name: value.display_name,
+      p_public_slug: value.public_slug,
+      p_avatar_url: value.avatar_url ?? "",
+      p_profile_public: value.profile_public,
+      p_show_achievements: value.show_achievements,
+      p_show_statistics: value.show_statistics,
+    });
     if (error) toast.error(error.message);
     else {
       toast.success("Preferências salvas");
       setForm(null);
-      queryClient.invalidateQueries({ queryKey: ["profile-preferences"] });
+      await queryClient.invalidateQueries({ queryKey: ["profile-preferences"] });
     }
   };
 
@@ -282,44 +297,44 @@ function ProfilePreferences() {
         <div>
           <Label>Nome público</Label>
           <Input
-            value={String(value.display_name ?? "")}
+            value={value.display_name}
             onChange={(e) => update("display_name", e.target.value)}
           />
         </div>
         <div>
           <Label>Link público</Label>
           <Input
-            value={String(value.public_slug ?? "")}
+            value={value.public_slug}
             onChange={(e) => update("public_slug", e.target.value.toLowerCase())}
           />
-          <p className="mt-1 text-xs text-muted-foreground">/u/{String(value.public_slug ?? "")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">/u/{value.public_slug}</p>
         </div>
         <div>
           <Label>Avatar (URL opcional)</Label>
           <Input
-            value={String(value.avatar_url ?? "")}
-            onChange={(e) => update("avatar_url", e.target.value)}
+            value={value.avatar_url ?? ""}
+            onChange={(e) => update("avatar_url", e.target.value || null)}
           />
         </div>
         <div className="space-y-4 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <Label>Perfil público</Label>
             <Switch
-              checked={Boolean(value.profile_public)}
+              checked={value.profile_public}
               onCheckedChange={(next) => update("profile_public", next)}
             />
           </div>
           <div className="flex items-center justify-between">
             <Label>Mostrar conquistas</Label>
             <Switch
-              checked={Boolean(value.show_achievements)}
+              checked={value.show_achievements}
               onCheckedChange={(next) => update("show_achievements", next)}
             />
           </div>
           <div className="flex items-center justify-between">
             <Label>Mostrar estatísticas</Label>
             <Switch
-              checked={Boolean(value.show_statistics)}
+              checked={value.show_statistics}
               onCheckedChange={(next) => update("show_statistics", next)}
             />
           </div>
