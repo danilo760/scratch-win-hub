@@ -165,28 +165,69 @@ function Dashboard() {
   );
 }
 
+type MyReward = {
+  id: string;
+  points_spent: number;
+  status: string;
+  protocol: string | null;
+  fulfillment_code: string | null;
+  created_at: string;
+  item_title_snapshot: string;
+  item_image_url_snapshot: string | null;
+};
+
+function parseMyRewards(value: unknown): MyReward[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const raw = entry as Record<string, unknown>;
+    const points = typeof raw.points_spent === "number" ? raw.points_spent : Number(raw.points_spent);
+    if (
+      typeof raw.id !== "string" ||
+      typeof raw.status !== "string" ||
+      typeof raw.created_at !== "string" ||
+      typeof raw.item_title_snapshot !== "string" ||
+      !Number.isFinite(points)
+    ) {
+      return [];
+    }
+    return [{
+      id: raw.id,
+      points_spent: points,
+      status: raw.status,
+      protocol: typeof raw.protocol === "string" ? raw.protocol : null,
+      fulfillment_code: typeof raw.fulfillment_code === "string" ? raw.fulfillment_code : null,
+      created_at: raw.created_at,
+      item_title_snapshot: raw.item_title_snapshot,
+      item_image_url_snapshot:
+        typeof raw.item_image_url_snapshot === "string" ? raw.item_image_url_snapshot : null,
+    }];
+  });
+}
+
 function MyRewards() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: rewardsError } = useQuery({
     queryKey: ["my-rewards"],
     queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sessão inválida");
-
       const { data, error } = await supabase
         .from("redemptions")
         .select(
-          "id, points_spent, status, protocol, fulfillment_code, created_at, store_items(title, image_url)",
+          "id, points_spent, status, protocol, fulfillment_code, created_at, item_title_snapshot, item_image_url_snapshot",
         )
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return parseMyRewards(data);
     },
   });
 
   if (isLoading) return <Loader2 className="animate-spin" />;
+  if (rewardsError) {
+    return (
+      <p role="alert" className="py-12 text-center text-destructive">
+        Não foi possível carregar seus prêmios.
+      </p>
+    );
+  }
 
   return (
     <Card>
@@ -198,18 +239,18 @@ function MyRewards() {
         {data?.length ? (
           data.map((reward) => (
             <div key={reward.id} className="flex items-center gap-3 rounded-lg border p-3">
-              {reward.store_items?.image_url && (
+              {reward.item_image_url_snapshot && (
                 <img
-                  src={reward.store_items.image_url}
+                  src={reward.item_image_url_snapshot}
                   alt=""
                   className="size-12 rounded object-cover"
                 />
               )}
               <div className="min-w-0 flex-1">
-                <strong className="block truncate">{reward.store_items?.title}</strong>
+                <strong className="block truncate">{reward.item_title_snapshot}</strong>
                 <span className="text-xs text-muted-foreground">
                   {new Date(reward.created_at).toLocaleDateString("pt-BR")} · {reward.points_spent}{" "}
-                  pts · {reward.protocol}
+                  pts · {reward.protocol ?? "Protocolo pendente"}
                 </span>
               </div>
               <div className="text-right text-sm">
