@@ -230,18 +230,20 @@ async function exerciseTouchScratch(browser, email, password) {
     await canvas.waitFor({ state: "visible" });
     const box = await canvas.boundingBox();
     assert.ok(box, "scratch canvas has no bounding box");
+    const revealButton = page.getByRole("button", { name: "Revelar resultado" });
 
     for (let y = 14; y < box.height - 8; y += 24) {
       for (let x = 14; x < box.width - 8; x += 24) {
         await page.touchscreen.tap(box.x + x, box.y + y);
       }
       await page.waitForTimeout(150);
-      if (await page.getByRole("button", { name: "Jogar Novamente" }).isVisible()) break;
+      if (!(await revealButton.isVisible())) break;
     }
 
+    await revealButton.waitFor({ state: "hidden", timeout: 10_000 });
     await page.getByRole("button", { name: "Jogar Novamente" }).waitFor({ state: "visible", timeout: 10_000 });
     assert.equal(
-      await page.getByRole("button", { name: "Revelar resultado" }).isVisible(),
+      await revealButton.isVisible(),
       false,
       "touch scratching did not reveal the result naturally",
     );
