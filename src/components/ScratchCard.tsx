@@ -10,9 +10,16 @@ type Props = {
   pointsEarned: number;
   onReset: () => void;
   rarity: ScratchRarity;
+  resetLabel?: string;
 };
 
-export function ScratchCard({ prize, pointsEarned, onReset, rarity }: Props) {
+export function ScratchCard({
+  prize,
+  pointsEarned,
+  onReset,
+  rarity,
+  resetLabel = "Jogar Novamente",
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const revealedRef = useRef(false);
@@ -219,7 +226,7 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity }: Props) {
         {soundOn ? "ligado" : "desligado"}
       </Button>
       <Button variant="outline" onClick={onReset} className="w-full max-w-[300px]">
-        <RotateCcw className="size-4" /> Jogar Novamente
+        <RotateCcw className="size-4" /> {resetLabel}
       </Button>
     </div>
   );
