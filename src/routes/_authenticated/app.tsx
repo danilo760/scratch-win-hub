@@ -9,7 +9,6 @@ import {
   Trophy,
   Settings,
   Loader2,
-  Copy,
   UserCircle,
   ShoppingBag,
   Gift,
@@ -104,9 +103,6 @@ function Dashboard() {
             <TabsTrigger value="scratch" className="shrink-0 gap-1.5">
               <Sparkles className="size-4" /> Raspadinhas
             </TabsTrigger>
-            <TabsTrigger value="wallet" className="shrink-0 gap-1.5">
-              <Wallet className="size-4" /> Carteira
-            </TabsTrigger>
             <TabsTrigger value="store" className="shrink-0 gap-1.5">
               <ShoppingBag className="size-4" /> Loja
             </TabsTrigger>
@@ -143,10 +139,6 @@ function Dashboard() {
 
           <TabsContent value="mystery" className="pt-6">
             <MysteryScratchPanel />
-          </TabsContent>
-
-          <TabsContent value="wallet" className="pt-6">
-            <WalletPanel />
           </TabsContent>
 
           <TabsContent value="store" className="pt-6">
@@ -333,55 +325,6 @@ function ProfilePreferences() {
           </div>
         </div>
         <Button onClick={save}>Salvar perfil</Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function WalletPanel() {
-  const [amount, setAmount] = useState(100);
-  const [sent, setSent] = useState(false);
-
-  const submit = async () => {
-    const { data: user } = await supabase.auth.getUser();
-    const { error } = await supabase.from("credit_transactions").insert({
-      user_id: user.user?.id,
-      amount,
-      type: "pix_pending",
-      status: "pending",
-      pix_key: "21988744783",
-    });
-    if (error) toast.error(error.message);
-    else {
-      setSent(true);
-      toast.success("Solicitação enviada para aprovação");
-    }
-  };
-
-  return (
-    <Card className="max-w-xl">
-      <CardHeader>
-        <CardTitle>Adicionar créditos via PIX</CardTitle>
-        <CardDescription>
-          Faça o pagamento para a chave 21988744783 e envie a solicitação.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Label>Quantidade de créditos</Label>
-        <Input
-          type="number"
-          min="10"
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-        />
-        <div className="rounded-lg bg-secondary p-4 text-sm">
-          Chave PIX: <strong>21988744783</strong> <Copy className="ml-2 inline size-4" />
-          <br />
-          Status: {sent ? "Aguardando confirmação do administrador" : "Ainda não solicitado"}
-        </div>
-        <Button onClick={submit} disabled={sent}>
-          Já fiz o pagamento
-        </Button>
       </CardContent>
     </Card>
   );
