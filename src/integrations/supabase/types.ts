@@ -7,8 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -574,6 +576,8 @@ export type Database = {
           fulfillment_code: string | null
           id: string
           item_id: string
+          item_image_url_snapshot: string | null
+          item_title_snapshot: string
           points_after: number | null
           points_spent: number
           protocol: string | null
@@ -587,6 +591,8 @@ export type Database = {
           fulfillment_code?: string | null
           id?: string
           item_id: string
+          item_image_url_snapshot?: string | null
+          item_title_snapshot: string
           points_after?: number | null
           points_spent: number
           protocol?: string | null
@@ -600,6 +606,8 @@ export type Database = {
           fulfillment_code?: string | null
           id?: string
           item_id?: string
+          item_image_url_snapshot?: string | null
+          item_title_snapshot?: string
           points_after?: number | null
           points_spent?: number
           protocol?: string | null
@@ -898,17 +906,40 @@ export type Database = {
         Returns: string
       }
       admin_add_mystery_entry_v1: {
-        Args: { p_mystery_version_id: string; p_scratchcard_id: string; p_weight: number }
+        Args: {
+          p_mystery_version_id: string
+          p_scratchcard_id: string
+          p_weight: number
+        }
         Returns: string
       }
       admin_clear_daily_scratch_v1: { Args: never; Returns: undefined }
-      admin_create_mystery_draft_v1: { Args: { p_name: string }; Returns: string }
-      admin_delete_mystery_entry_v1: { Args: { p_entry_id: string }; Returns: undefined }
-      admin_publish_mystery_v1: { Args: { p_mystery_version_id: string }; Returns: Json }
-      admin_set_daily_scratch_v1: { Args: { p_card_id: string }; Returns: undefined }
-      admin_update_mystery_entry_v1: { Args: { p_entry_id: string; p_weight: number }; Returns: undefined }
+      admin_create_mystery_draft_v1: {
+        Args: { p_name: string }
+        Returns: string
+      }
+      admin_delete_mystery_entry_v1: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
+      admin_publish_mystery_v1: {
+        Args: { p_mystery_version_id: string }
+        Returns: Json
+      }
+      admin_set_daily_scratch_v1: {
+        Args: { p_card_id: string }
+        Returns: undefined
+      }
+      admin_update_mystery_entry_v1: {
+        Args: { p_entry_id: string; p_weight: number }
+        Returns: undefined
+      }
       admin_update_redemption_v1: {
-        Args: { p_fulfillment_code?: string; p_redemption_id: string; p_status: string }
+        Args: {
+          p_fulfillment_code?: string
+          p_redemption_id: string
+          p_status: string
+        }
         Returns: Json
       }
       admin_upsert_scratchcard_v1: {
@@ -943,14 +974,30 @@ export type Database = {
         Args: { p_metadata?: Json; p_slug: string; p_user_id: string }
         Returns: undefined
       }
-      buy_raffle_tickets: { Args: { p_quantity: number; p_raffle_id: string }; Returns: Json }
-      claim_daily_scratch_v1: { Args: { p_card_id: string; p_client_request_id: string }; Returns: Json }
-      claim_daily_scratch_v2: { Args: { p_client_request_id: string }; Returns: Json }
+      buy_raffle_tickets: {
+        Args: { p_quantity: number; p_raffle_id: string }
+        Returns: Json
+      }
+      claim_daily_scratch_v1: {
+        Args: { p_card_id: string; p_client_request_id: string }
+        Returns: Json
+      }
+      claim_daily_scratch_v2: {
+        Args: { p_client_request_id: string }
+        Returns: Json
+      }
       create_math_draft_v1: {
-        Args: { p_card_id: string; p_rarity_slug: string; p_version_name: string }
+        Args: {
+          p_card_id: string
+          p_rarity_slug: string
+          p_version_name: string
+        }
         Returns: string
       }
-      delete_math_outcome_v1: { Args: { p_outcome_id: string }; Returns: undefined }
+      delete_math_outcome_v1: {
+        Args: { p_outcome_id: string }
+        Returns: undefined
+      }
       get_active_scratchcards_v1: {
         Args: never
         Returns: {
@@ -970,16 +1017,32 @@ export type Database = {
       get_public_profile: { Args: { p_slug: string }; Returns: Json }
       get_special_scratch_status_v1: { Args: never; Returns: Json }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      open_mystery_scratch_v1: { Args: { p_client_request_id: string }; Returns: Json }
-      play_scratchcard: { Args: { card_id: string }; Returns: Json }
-      play_scratchcard_v1: {
-        Args: { p_card_id: string; p_client_request_id: string; p_source?: string }
+      open_mystery_scratch_v1: {
+        Args: { p_client_request_id: string }
         Returns: Json
       }
-      publish_math_version_v1: { Args: { p_math_version_id: string }; Returns: Json }
+      play_scratchcard: { Args: { card_id: string }; Returns: Json }
+      play_scratchcard_v1: {
+        Args: {
+          p_card_id: string
+          p_client_request_id: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      publish_math_version_v1: {
+        Args: { p_math_version_id: string }
+        Returns: Json
+      }
       redeem_item: { Args: { item_id_param: string }; Returns: Json }
-      redeem_reward_v1: { Args: { p_client_request_id: string; p_item_id: string }; Returns: Json }
-      simulate_math_v1: { Args: { p_math_version_id: string; p_simulations: number }; Returns: Json }
+      redeem_reward_v1: {
+        Args: { p_client_request_id: string; p_item_id: string }
+        Returns: Json
+      }
+      simulate_math_v1: {
+        Args: { p_math_version_id: string; p_simulations: number }
+        Returns: Json
+      }
       update_math_outcome_v1: {
         Args: {
           p_name: string
@@ -1012,6 +1075,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -1024,66 +1088,104 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends { Row: infer R }
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
       ? R
       : never
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends { Insert: infer I }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends { Insert: infer I }
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
       ? I
       : never
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends { Update: infer U }
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends { Update: infer U }
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
       ? U
       : never
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
