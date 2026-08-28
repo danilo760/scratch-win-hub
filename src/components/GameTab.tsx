@@ -52,25 +52,25 @@ function parseActiveCards(value: unknown): ActiveCard[] {
   return value.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const raw = entry as Record<string, unknown>;
-    const price = readFiniteNumber(raw.price);
+    const price = readFiniteNumber(raw["price"]);
     if (
-      typeof raw.id !== "string" ||
-      typeof raw.title !== "string" ||
-      typeof raw.math_version_id !== "string" ||
-      typeof raw.rarity_name !== "string" ||
+      typeof raw["id"] !== "string" ||
+      typeof raw["title"] !== "string" ||
+      typeof raw["math_version_id"] !== "string" ||
+      typeof raw["rarity_name"] !== "string" ||
       price === null ||
-      !isScratchRarity(raw.rarity_slug)
+      !isScratchRarity(raw["rarity_slug"])
     ) {
       return [];
     }
     return [
       {
-        id: raw.id,
-        title: raw.title,
+        id: raw["id"],
+        title: raw["title"],
         price,
-        math_version_id: raw.math_version_id,
-        rarity_slug: raw.rarity_slug,
-        rarity_name: raw.rarity_name,
+        math_version_id: raw["math_version_id"],
+        rarity_slug: raw["rarity_slug"],
+        rarity_name: raw["rarity_name"],
       },
     ];
   });
@@ -79,35 +79,35 @@ function parseActiveCards(value: unknown): ActiveCard[] {
 function parsePlayResult(value: unknown): PlayResult | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
-  const prize = readFiniteNumber(raw.prize);
-  const newBalance = readFiniteNumber(raw.new_balance);
-  const newPoints = readFiniteNumber(raw.new_points);
-  const pointsEarned = readFiniteNumber(raw.points_earned);
-  const resultType = raw.result_type;
+  const prize = readFiniteNumber(raw["prize"]);
+  const newBalance = readFiniteNumber(raw["new_balance"]);
+  const newPoints = readFiniteNumber(raw["new_points"]);
+  const pointsEarned = readFiniteNumber(raw["points_earned"]);
+  const resultType = raw["result_type"];
 
   if (
-    typeof raw.id !== "string" ||
-    typeof raw.math_version_id !== "string" ||
+    typeof raw["id"] !== "string" ||
+    typeof raw["math_version_id"] !== "string" ||
     prize === null ||
     newBalance === null ||
     newPoints === null ||
     pointsEarned === null ||
-    !isScratchRarity(raw.rarity_slug) ||
+    !isScratchRarity(raw["rarity_slug"]) ||
     !["none", "points", "credits", "combined"].includes(String(resultType))
   ) {
     return null;
   }
 
   return {
-    id: raw.id,
+    id: raw["id"],
     prize,
     new_balance: newBalance,
     new_points: newPoints,
     points_earned: pointsEarned,
-    math_version_id: raw.math_version_id,
-    rarity_slug: raw.rarity_slug,
+    math_version_id: raw["math_version_id"],
+    rarity_slug: raw["rarity_slug"],
     result_type: resultType as ResultType,
-    idempotent: raw.idempotent === true,
+    idempotent: raw["idempotent"] === true,
   };
 }
 
