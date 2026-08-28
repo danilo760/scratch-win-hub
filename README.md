@@ -1,98 +1,252 @@
 # Scratch & Win Hub
 
-Aja como um desenvolvedor Front-end Sênior especialista em React, TypeScript, Tailwind CSS, Shadcn UI e Supabase. Sua missão é criar um Web App completo de "Raspadinha Online Gamificada".
+Aplicação web de raspadinhas digitais construída com React, TypeScript, TanStack Router/Query, Tailwind CSS, shadcn/ui e Supabase.
 
-1. CONTEXTO DE BANCO DE DADOS E BACKEND (SUPABASE) O backend já está 100% configurado no meu Supabase com as seguintes tabelas e funções RLS habilitadas:
+> Estado técnico: o projeto está em remediação e validação. Não considere este repositório `PRODUCTION READY` apenas porque build, lint ou testes estáticos passam. Testes de integração, concorrência, RLS multiusuário e configurações externas de Auth ainda precisam ser validados em ambiente apropriado.
 
-Tabela profiles: id (uuid), balance (numeric), points (int), is_admin (boolean). (Nota: um trigger já insere R$10.00 iniciais no cadastro).
+## Stack
 
-Tabela scratchcards: id, title, price (numeric), points_reward (int), active (boolean).
+- React + TypeScript
+- Vite / TanStack Start e TanStack Router
+- TanStack Query
+- Tailwind CSS + shadcn/ui + lucide-react
+- Supabase Auth + PostgreSQL + RLS + RPCs
+- GitHub Actions para validação
+- Lovable como editor/preview sincronizado com a branch `main`
 
-Tabela store_items: id, title, description, points_cost (int), stock (int), active.
+## Fluxo principal de raspadinha
 
-RPC 1: play_scratchcard(card_id). Retorna: { prize: number, new_balance: number, new_points: number, points_earned: number }.
+A aba **Raspadinhas** usa `GameTab` e a RPC `play_scratchcard_v1`.
 
-RPC 2: redeem_item(item_id_param). Retorna: { success: boolean, new_points: number }.
+Fluxo simplificado:
 
-2. AUTENTICAÇÃO E GERENCIAMENTO DE ESTADO
+```text
+scratchcards ativos
+→ versão matemática PUBLISHED
+→ raridade da versão publicada
+→ play_scratchcard_v1(card_id, client_request_id, source)
+→ outcome ponderado server-side
+→ débito/prêmio/pontos
+→ ledgers append-only
+→ resposta completa
+→ ScratchCard apenas revela visualmente o resultado já decidido
+```
 
-Integre o Supabase Auth (Email e Senha). Crie uma tela bonita de Login/Cadastro.
+O canvas nunca decide o prêmio. O resultado financeiro e de pontos é definido no servidor antes da raspagem visual.
 
-Se o usuário estiver autenticado, busque os dados dele na tabela profiles e armazene no estado global da aplicação (Saldo, Pontos e status de Admin).
+## Matemática e raridades
 
-3. LAYOUT PRINCIPAL (DASHBOARD LOGADO)
+Raridades atualmente utilizadas pelo schema:
 
-Header Fixo: Mostre o E-mail do usuário, Botão de Logout, "Saldo: R$ X,XX" (com ícone de dinheiro verde) e "Pontos: X" (com ícone de moeda dourada).
+```text
+bronze
+prata
+ouro
+diamante
+```
 
-Navegação (Tabs do Shadcn): Crie 3 abas principais: "🎮 Jogar", "🛍️ Loja de Resgate" e "⚙️ Painel Admin" (Renderize a aba Admin APENAS se is_admin for true).
+Versões matemáticas seguem o ciclo:
 
-4. ABA 1: O JOGO DA RASPADINHA (CRÍTICO)
+```text
+DRAFT → PUBLISHED → RETIRED
+```
 
-Exiba as raspadinhas ativas (scratchcards) em cards contendo o Título, Preço e Recompensa em pontos. Adicione um botão "Comprar e Jogar".
+- `DRAFT`: editável.
+- `PUBLISHED`: imutável, salvo transição controlada para `RETIRED`.
+- `RETIRED`: histórico imutável.
+- Outcomes de versões `PUBLISHED` ou `RETIRED` não podem ser alterados.
 
-Ao clicar em "Comprar":
+Cada outcome possui nome, prêmio em créditos, pontos e peso. A probabilidade informativa é calculada como `weight / soma(weights)`; o peso permanece a fonte de verdade.
 
-Bloqueie o botão (loading).
+## Idempotência
 
-Chame supabase.rpc('play_scratchcard', { card_id: id }).
+Operações críticas usam `client_request_id` para proteger retries de rede.
 
-Com a resposta, exiba o componente interativo de Raspadinha.
+Principais RPCs:
 
-O Componente Canvas (Raspadinha):
+- `play_scratchcard_v1`
+- `redeem_reward_v1`
+- `claim_daily_scratch_v2`
+- `open_mystery_scratch_v1`
 
-Precisa ter uma div relativa de aprox 300x150px.
+A jogada principal serializa retries simultâneos da mesma requisição por usuário e devolve o mesmo contrato completo em retry, incluindo saldo e pontos autoritativos.
 
-O Fundo (camada inferior) mostra o prêmio recebido pela RPC (Verde com R$ se ganhou, Vermelho se perdeu).
+## Ledgers
 
-A Frente (camada superior) deve ser um <canvas> HTML5 absoluto preenchido com a cor #9CA3AF e o texto "RASPE AQUI".
+Alterações relevantes são registradas em estruturas append-only:
 
-Implemente a lógica de raspagem no Canvas usando globalCompositeOperation = 'destination-out' ao disparar eventos de mousemove e touchmove (suporte mobile é obrigatório). Conforme o usuário passa o dedo/mouse, revela o prêmio embaixo.
+- `credit_ledger`
+- `points_ledger`
+- `audit_logs`
+- `admin_audit_logs`
 
-Mostre um botão "Jogar Novamente" abaixo do canvas para resetar o estado.
+O frontend não deve ajustar saldo/pontos de forma autoritativa. Após uma mutação válida, ele atualiza a experiência e refaz a consulta do perfil no servidor.
 
-5. ABA 2: LOJA DE RESGATE (STORE)
+## Raspadinha Diária
 
-Liste os store_items ativos em um Grid responsivo usando os Cards do Shadcn.
+O cliente usa:
 
-Cada card mostra: Título, Descrição, Preço em Pontos e Estoque disponível.
+```text
+claim_daily_scratch_v2(client_request_id)
+```
 
-Botão "Resgatar Item": Chama a RPC redeem_item. Mostre um toast (Shadcn Toast) de Sucesso ou Erro e atualize os pontos no Header em tempo real.
+O frontend não escolhe arbitrariamente `card_id`. A configuração da diária é resolvida no servidor. Se não existir uma raspadinha diária ativa com matemática publicada, a interface mostra **Configuração pendente / Em breve** e não chama a RPC.
 
-6. ABA 3: PAINEL DE ADMINISTRAÇÃO
+A função antiga `claim_daily_scratch_v1(card_id, client_request_id)` foi mantida apenas para compatibilidade interna e não é executável diretamente por usuários autenticados.
 
-Layout em duas colunas (ou abas internas):
+## Raspadinha Misteriosa
 
-Nova Raspadinha: Formulário para inserir title, price, points_reward. Ao salvar, insere no supabase (insert em scratchcards).
+A Misteriosa usa versões/pools publicados com entradas ponderadas. A interface só habilita a ação quando o pool publicado continua integralmente válido:
 
-Novo Item na Loja: Formulário para title, description, points_cost, stock. Salva no supabase (insert em store_items).
+- todas as entradas possuem peso positivo;
+- todas apontam para raspadinhas existentes e ativas;
+- todas possuem matemática `PUBLISHED`.
 
-Mostre toasts de sucesso após a criação.
+Retries simultâneos do mesmo `client_request_id` também são serializados.
 
-7. UI/UX E ESTILIZAÇÃO
+## Loja e resgates
 
-Use um tema escuro (Dark Mode) estilo "iGaming/Cassino moderno". Fundo escuro (slate-950), bordas suaves, efeitos de "glow" em botões primários.
+A loja usa o schema atual de `store_items`, incluindo:
 
-Use a biblioteca lucide-react para todos os ícones.
+- `stock_total`
+- `stock_available`
+- `per_user_limit`
+- `points_cost`
+- `category`
+- `starts_at` / `ends_at`
+- `display_order`
+- `image_url`
+- `active`
 
-O design deve ser 100% responsivo (mobile-first). As raspadinhas devem caber perfeitamente na tela de um celular.
+Resgates usam `redeem_reward_v1` e administração por `admin_update_redemption_v1`.
 
-This project was built with [Lovable](https://lovable.dev).
+Transições administrativas são protegidas no servidor; o frontend não faz `UPDATE` direto de status.
 
-## Build with Lovable
+## Perfis, XP e conquistas
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/f75abdfa-2e62-4320-8856-aba1d6e98a65).
+`profiles` contém, entre outros campos:
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- saldo e pontos;
+- `display_name` e `public_slug`;
+- preferências de perfil público;
+- XP e nível;
+- status administrativo.
 
-## Development
+O cadastro cria o perfil por trigger server-side. O slug público é derivado deterministicamente do UUID do usuário e possui unicidade no banco.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+As conquistas atuais refletem ações realmente verificáveis, como primeira raspadinha, primeira jogada de determinada raridade e uma diária. A concessão ocorre server-side e as funções internas de progressão/conquista não são executáveis por `anon` ou `authenticated`.
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+## Admin
+
+O workspace administrativo possui áreas para:
+
+- Visão Geral
+- Raspadinhas
+- Versões Matemáticas
+- Resultados
+- Raridades
+- Diária
+- Misteriosa
+- Loja
+- Resgates
+- Conquistas
+- Usuários
+- Ledger
+- Auditoria
+- Simulador
+
+Operações administrativas críticas são feitas por RPCs que validam `auth.uid()` e autorização de admin no servidor.
+
+## Fluxos legados
+
+O produto antigo de sorteios (`raffles` / `raffle_tickets`) foi retirado da experiência principal. As estruturas históricas permanecem no banco quando necessárias para preservar migrations e histórico.
+
+O antigo fluxo de depósito PIX também não faz parte da experiência atual. O frontend não possui chave PIX hardcoded nem permissão para criar diretamente novas `credit_transactions`.
+
+## Segurança
+
+Princípios atuais:
+
+- RLS ativo nas tabelas públicas relevantes;
+- ownership com `(select auth.uid())` quando apropriado;
+- RPCs administrativas validam admin server-side;
+- funções privilegiadas têm grants restritos;
+- matemática publicada/histórica é imutável;
+- ledgers e auditoria preservam histórico;
+- `.env` e `.env.*` não são versionados;
+- `service_role` é exclusivamente server-side.
+
+### Configuração externa pendente
+
+O Supabase Security Advisor indica que **Leaked Password Protection** está desativado. Essa opção deve ser habilitada no painel/configuração de Auth antes de considerar produção real.
+
+Também é recomendado revisar confirmação de e-mail, recuperação de senha, rate limits, SMTP/CAPTCHA conforme o volume e MFA para administradores.
+
+## Variáveis de ambiente
+
+Copie `.env.example` e preencha apenas no ambiente apropriado.
+
+Client-side:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+```
+
+Server-side:
+
+```text
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+Nunca exponha `SUPABASE_SERVICE_ROLE_KEY` ao browser ou ao repositório.
+
+## Scripts
+
+```bash
+npm run dev
+npm run format
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+A CI executa a sequência de validação:
+
+```text
+format → lint → typecheck → test → build
+```
+
+## Testes e limites atuais
+
+Os testes existentes de contrato são úteis para detectar regressões de código, mas não substituem testes transacionais reais.
+
+Antes de produção ainda devem ser executados em ambiente isolado:
+
+- cadastro completo Auth → profile → login;
+- concorrência de 50 jogadas com retries controlados;
+- 20 solicitações simultâneas da diária;
+- disputa concorrente do último item em estoque;
+- retry após perda de resposta de rede;
+- matriz RLS `anon / user_a / user_b / admin`;
+- validação de interface em viewports mobile e desktop.
+
+Esses testes não devem ser executados contra dados reais de produção.
+
+## Migrations
+
+Alterações de banco são feitas por migrations incrementais em `supabase/migrations`. Não edite migrations históricas já aplicadas e não altere versões matemáticas `PUBLISHED` diretamente.
+
+## Desenvolvimento
+
+```bash
+git clone https://github.com/danilo760/scratch-win-hub.git
+cd scratch-win-hub
+npm install
 npm run dev
 ```
+
+O projeto também pode ser aberto no Lovable. Mudanças enviadas para `main` ficam disponíveis para sincronização no editor.
