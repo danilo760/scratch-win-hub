@@ -26,12 +26,12 @@ values
 ('22222222-aaaa-4222-8222-222222222222','20202020-2020-4020-8020-202020202020','30303030-3030-4030-8030-303030303030',1,0,1,'40404040-4040-4040-8040-404040404040','22222222-bbbb-4222-8222-222222222222','rls');
 insert into public.credit_ledger(user_id,amount,balance_before,balance_after,transaction_type,reference_type,reference_id)
 values
-('10101010-1010-4010-8010-101010101010',-1,10,9,'RLS_TEST','play','11111111-aaaa-4111-8111-111111111111'),
-('20202020-2020-4020-8020-202020202020',-1,10,9,'RLS_TEST','play','22222222-aaaa-4222-8222-222222222222');
+('10101010-1010-4010-8010-101010101010',-1,10,9,'SCRATCH_COST','play','11111111-aaaa-4111-8111-111111111111'),
+('20202020-2020-4020-8020-202020202020',-1,10,9,'SCRATCH_COST','play','22222222-aaaa-4222-8222-222222222222');
 insert into public.points_ledger(user_id,amount,balance_before,balance_after,transaction_type,reference_type,reference_id)
 values
-('10101010-1010-4010-8010-101010101010',1,0,1,'RLS_TEST','play','11111111-aaaa-4111-8111-111111111111'),
-('20202020-2020-4020-8020-202020202020',1,0,1,'RLS_TEST','play','22222222-aaaa-4222-8222-222222222222');
+('10101010-1010-4010-8010-101010101010',1,0,1,'SCRATCH_REWARD','play','11111111-aaaa-4111-8111-111111111111'),
+('20202020-2020-4020-8020-202020202020',1,0,1,'SCRATCH_REWARD','play','22222222-aaaa-4222-8222-222222222222');
 insert into public.daily_scratch_claims(user_id,claim_date,scratch_play_id)
 values
 ('10101010-1010-4010-8010-101010101010',date '2099-01-01','11111111-aaaa-4111-8111-111111111111'),
@@ -53,8 +53,6 @@ values
 ('10101010-1010-4010-8010-101010101010','70707070-7070-4070-8070-707070707070'),
 ('20202020-2020-4020-8020-202020202020','70707070-7070-4070-8070-707070707070');
 
--- Public profile RPC is intentionally anonymous. Explicitly make A private first,
--- because production profiles are public by default.
 update public.profiles set profile_public=false where id='10101010-1010-4010-8010-101010101010';
 set local role anon;
 do $$ declare r jsonb; begin
@@ -83,7 +81,6 @@ declare t text; c integer;
 begin
   select count(*) into c from public.profiles;
   if c <> 1 then raise exception '% profile isolation failed',p_label; end if;
-
   foreach t in array array['plays','credit_ledger','points_ledger','daily_scratch_claims','mystery_openings','redemptions','xp_transactions','user_achievements']
   loop
     execute format('select count(*) from public.%I',t) into c;
