@@ -14,13 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      plays: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          points_earned: number
+          price: number
+          prize: number
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          points_earned: number
+          price: number
+          prize: number
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          price?: number
+          prize?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plays_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "scratchcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          email: string | null
+          id: string
+          is_admin: boolean
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          email?: string | null
+          id: string
+          is_admin?: boolean
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_admin?: boolean
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      redemptions: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          points_spent: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          points_spent: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          points_spent?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "store_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scratchcards: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          points_reward: number
+          price: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          points_reward?: number
+          price?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          points_reward?: number
+          price?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          points_cost: number
+          stock: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_cost?: number
+          stock?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_cost?: number
+          stock?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      play_scratchcard: { Args: { card_id: string }; Returns: Json }
+      redeem_item: { Args: { item_id_param: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
