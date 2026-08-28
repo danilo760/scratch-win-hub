@@ -30,6 +30,13 @@ test("Lovable browser bootstrap has a safe Supabase fallback without server secr
   assert.doesNotMatch(client, /process\.env\[['"]SUPABASE_(?:URL|PUBLISHABLE_KEY)['"]\]/);
 });
 
+test("browser Supabase client leaves publishable-key auth headers to supabase-js", async () => {
+  const client = await read("src/integrations/supabase/client.ts");
+  assert.match(client, /createClient<Database>\(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY/);
+  assert.doesNotMatch(client, /headers\.delete\(["']Authorization["']\)/);
+  assert.doesNotMatch(client, /createSupabaseFetch|Bearer \$\{supabaseKey\}/);
+});
+
 test("Supabase bearer token attacher is registered globally for server functions", async () => {
   const [start, attacher] = await Promise.all([
     read("src/start.ts"),
