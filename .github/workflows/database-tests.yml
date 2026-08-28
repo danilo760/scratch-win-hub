@@ -1,0 +1,56 @@
+name: Database Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install application dependencies
+        run: npm install --package-lock=false
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.115.0
+
+      - name: Start isolated Supabase
+        run: supabase start
+
+      - name: Rebuild local database from migrations
+        run: supabase db reset
+
+      - name: Run pgTAP database tests
+        run: supabase test db
+
+      - name: Export local Supabase credentials
+        run: supabase status -o env > /tmp/supabase.env
+
+      - name: Run real concurrency and RLS integration tests
+        shell: bash
+        run: |
+          set -a
+          source /tmp/supabase.env
+          set +a
+          export SUPABASE_URL="${API_URL}"
+          export SUPABASE_ANON_KEY="${ANON_KEY}"
+          export SUPABASE_SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY}"
+          export PHASE15_ALLOW_LOCAL_TESTS=true
+          node tests/phase15-concurrency.test.mjs
