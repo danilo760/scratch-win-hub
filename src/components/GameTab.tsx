@@ -121,7 +121,7 @@ export function GameTab() {
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ["active-scratchcards"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_active_scratchcards_v1" as never);
+      const { data, error } = await supabase.rpc("get_active_scratchcards_v1");
       if (error) throw error;
       return parseActiveCards(data);
     },
@@ -131,14 +131,11 @@ export function GameTab() {
     setPlayingId(id);
     const requestId = pendingRequestIds.current.get(id) ?? crypto.randomUUID();
     pendingRequestIds.current.set(id, requestId);
-    const { data, error } = await supabase.rpc(
-      "play_scratchcard_v1" as never,
-      {
-        p_card_id: id,
-        p_client_request_id: requestId,
-        p_source: "web",
-      } as never,
-    );
+    const { data, error } = await supabase.rpc("play_scratchcard_v1", {
+      p_card_id: id,
+      p_client_request_id: requestId,
+      p_source: "web",
+    });
     setPlayingId(null);
 
     if (error) {
