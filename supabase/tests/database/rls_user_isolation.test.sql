@@ -24,7 +24,6 @@ insert into public.plays(id,user_id,card_id,price,prize,points_earned,math_versi
 values
 ('11111111-aaaa-4111-8111-111111111111','10101010-1010-4010-8010-101010101010','30303030-3030-4030-8030-303030303030',1,0,1,'40404040-4040-4040-8040-404040404040','11111111-bbbb-4111-8111-111111111111','rls'),
 ('22222222-aaaa-4222-8222-222222222222','20202020-2020-4020-8020-202020202020','30303030-3030-4030-8030-303030303030',1,0,1,'40404040-4040-4040-8040-404040404040','22222222-bbbb-4222-8222-222222222222','rls');
-
 insert into public.credit_ledger(user_id,amount,balance_before,balance_after,transaction_type,reference_type,reference_id)
 values
 ('10101010-1010-4010-8010-101010101010',-1,10,9,'RLS_TEST','play','11111111-aaaa-4111-8111-111111111111'),
@@ -53,6 +52,28 @@ insert into public.user_achievements(user_id,achievement_id)
 values
 ('10101010-1010-4010-8010-101010101010','70707070-7070-4070-8070-707070707070'),
 ('20202020-2020-4020-8020-202020202020','70707070-7070-4070-8070-707070707070');
+
+-- Public profile RPC is intentionally anonymous, but private profiles must stay hidden.
+set local role anon;
+do $$ declare r jsonb; begin
+  r := public.get_public_profile('user-10101010101040108010101010101010');
+  if r is not null then raise exception 'private profile exposed by public RPC'; end if;
+end $$;
+reset role;
+
+update public.profiles
+set profile_public=true, show_achievements=false, show_statistics=false
+where id='10101010-1010-4010-8010-101010101010';
+set local role anon;
+do $$ declare r jsonb; begin
+  r := public.get_public_profile('user-10101010101040108010101010101010');
+  if r is null then raise exception 'public profile unavailable'; end if;
+  if r ? 'email' or r ? 'balance' or r ? 'points' or r ? 'is_admin' then
+    raise exception 'public profile leaked sensitive fields';
+  end if;
+  if r->>'display_name' <> 'RLS A' then raise exception 'public profile returned wrong subject'; end if;
+end $$;
+reset role;
 
 select set_config('request.jwt.claims','{"sub":"10101010-1010-4010-8010-101010101010","role":"authenticated"}',true);
 set local role authenticated;
@@ -91,6 +112,6 @@ do $$ begin
 end $$;
 reset role;
 
-select extensions.pass('USER_A and USER_B remain isolated across all user-data tables and regular users cannot call admin RPCs');
+select extensions.pass('USER_A and USER_B remain isolated, public profiles respect privacy, and regular users cannot call admin RPCs');
 select * from extensions.finish();
 rollback;
