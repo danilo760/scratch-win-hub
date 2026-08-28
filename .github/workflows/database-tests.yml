@@ -57,3 +57,4 @@ jobs:
           test -n "${SUPABASE_ANON_KEY}" || { echo "Missing local Supabase publishable/anon key"; exit 1; }
           test -n "${SUPABASE_SERVICE_ROLE_KEY}" || { echo "Missing local Supabase secret/service-role key"; exit 1; }
           node tests/phase15-concurrency.integration.mjs
+          node tests/special-scratch-concurrency.integration.mjs
