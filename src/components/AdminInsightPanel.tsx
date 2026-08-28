@@ -294,12 +294,20 @@ export function AdminInsightPanel() {
 
 function OperationsPanel({ query }: { query: ReturnType<typeof useQuery<AdminDashboard>> }) {
   if (query.isLoading) return <Loader2 className="animate-spin" />;
-  if (query.error || !query.data)
+  if (query.error || !query.data) {
     return (
-      <p role="alert" className="text-destructive">
-        Não foi possível carregar os indicadores administrativos.
-      </p>
+      <Card>
+        <CardContent className="space-y-3 p-6">
+          <p role="alert" className="text-destructive">
+            Não foi possível carregar os indicadores administrativos.
+          </p>
+          <Button variant="outline" onClick={() => void query.refetch()}>
+            <RefreshCw className="size-4" /> Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
     );
+  }
   const { cards } = query.data;
   const winRate = cards.plays_today > 0 ? (cards.winning_results / cards.plays_today) * 100 : 0;
   return (
@@ -360,22 +368,30 @@ function OperationsPanel({ query }: { query: ReturnType<typeof useQuery<AdminDas
               </tr>
             </thead>
             <tbody>
-              {query.data.plays_by_day.map((day) => {
-                const users =
-                  query.data.active_users_by_day.find((row) => row.day === day.day)?.count ?? 0;
-                const points = query.data.points_by_day.find((row) => row.day === day.day);
-                return (
-                  <tr key={day.day} className="border-b">
-                    <td className="p-2">
-                      {new Date(`${day.day}T12:00:00`).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="p-2">{day.count}</td>
-                    <td className="p-2">{users}</td>
-                    <td className="p-2">{points?.issued ?? 0}</td>
-                    <td className="p-2">{points?.consumed ?? 0}</td>
-                  </tr>
-                );
-              })}
+              {query.data.plays_by_day.length ? (
+                query.data.plays_by_day.map((day) => {
+                  const users =
+                    query.data.active_users_by_day.find((row) => row.day === day.day)?.count ?? 0;
+                  const points = query.data.points_by_day.find((row) => row.day === day.day);
+                  return (
+                    <tr key={day.day} className="border-b">
+                      <td className="p-2">
+                        {new Date(`${day.day}T12:00:00`).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="p-2">{day.count}</td>
+                      <td className="p-2">{users}</td>
+                      <td className="p-2">{points?.issued ?? 0}</td>
+                      <td className="p-2">{points?.consumed ?? 0}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                    Sem dados nos últimos 30 dias.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </CardContent>
@@ -435,6 +451,15 @@ function MathAuditPanel({
       </Card>
     );
   }
+  if (!validVersions.length) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-muted-foreground">
+          Nenhuma versão matemática com resultados está disponível para auditoria.
+        </CardContent>
+      </Card>
+    );
+  }
   const card = selected ? config.cards.find((item) => item.id === selected.scratchcard_id) : null;
   return (
     <Card>
@@ -480,9 +505,14 @@ function MathAuditPanel({
           </div>
         )}
         {auditQuery.error && (
-          <p role="alert" className="text-destructive">
-            Não foi possível carregar a auditoria matemática.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <p role="alert" className="text-sm text-destructive">
+              Não foi possível carregar a auditoria matemática.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void auditQuery.refetch()}>
+              <RefreshCw className="size-4" /> Tentar novamente
+            </Button>
+          </div>
         )}
         {auditQuery.data && (
           <>
