@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Loader2, Plus, Save, Send, Trash2 } from "lucide-react";
+import { Calculator, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const mathConfigQueryKey = ["admin-math-config"] as const;
+const mathConfigQueryKey = ["admin-math-config", "editor"] as const;
 
 type MathCard = {
   id: string;
@@ -157,7 +157,7 @@ export function MathAdminPanel() {
   const [creating, setCreating] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
-  const { data = { cards: [], rarities: [], versions: [] }, isLoading } = useQuery({
+  const mathQuery = useQuery({
     queryKey: mathConfigQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
@@ -165,6 +165,11 @@ export function MathAdminPanel() {
       return parseMathConfig(data);
     },
   });
+  const {
+    data = { cards: [], rarities: [], versions: [] },
+    isLoading,
+    error,
+  } = mathQuery;
 
   useEffect(() => {
     if (!cardId && data.cards[0]) setCardId(data.cards[0].id);
@@ -196,7 +201,7 @@ export function MathAdminPanel() {
         totalWeight
       : 0;
 
-  const refresh = () => qc.invalidateQueries({ queryKey: mathConfigQueryKey });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-math-config"] });
 
   const createDraft = async () => {
     if (!cardId || !versionName.trim()) {
@@ -244,6 +249,20 @@ export function MathAdminPanel() {
   };
 
   if (isLoading) return <Loader2 className="animate-spin" />;
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-6">
+          <p role="alert" className="text-destructive">
+            Não foi possível carregar a configuração matemática.
+          </p>
+          <Button variant="outline" onClick={() => void mathQuery.refetch()}>
+            <RefreshCw className="size-4" /> Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
