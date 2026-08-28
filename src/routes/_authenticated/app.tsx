@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
-import { MathAdminPanel } from "@/components/MathAdminPanel";
+import { AdminWorkspace } from "@/components/AdminWorkspace";
 import { DailyScratchPanel, MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
@@ -157,7 +157,7 @@ function Dashboard() {
 
           {profile?.is_admin && (
             <TabsContent value="admin" className="pt-6">
-              <AdminPanel />
+              <AdminWorkspace />
             </TabsContent>
           )}
         </Tabs>
@@ -327,32 +327,5 @@ function ProfilePreferences() {
         <Button onClick={save}>Salvar perfil</Button>
       </CardContent>
     </Card>
-  );
-}
-
-function AdminPanel() {
-  const { data: dashboard } = useQuery({
-    queryKey: ["admin-dashboard"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_dashboard_v1" as never);
-      if (error) throw error;
-      return data as unknown as { cards: Record<string, number> };
-    },
-  });
-
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Object.entries(dashboard?.cards ?? {}).map(([key, value]) => (
-          <Card key={key}>
-            <CardContent className="p-4">
-              <p className="text-xs capitalize text-muted-foreground">{key.replaceAll("_", " ")}</p>
-              <strong className="text-2xl">{value}</strong>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <MathAdminPanel />
-    </div>
   );
 }
