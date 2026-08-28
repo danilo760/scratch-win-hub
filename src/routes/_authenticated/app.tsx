@@ -11,6 +11,7 @@ import {
   Settings,
   Loader2,
   Copy,
+  UserCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
@@ -122,6 +124,9 @@ function Dashboard() {
             <TabsTrigger value="wallet" className="flex-1 gap-1.5">
               <Wallet className="size-4" /> Carteira
             </TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1 gap-1.5">
+              <UserCircle className="size-4" /> Perfil
+            </TabsTrigger>
             {profile?.is_admin && (
               <TabsTrigger value="admin" className="flex-1 gap-1.5">
                 <Settings className="size-4" /> Admin
@@ -193,6 +198,9 @@ function Dashboard() {
           <TabsContent value="wallet" className="pt-6">
             <WalletPanel />
           </TabsContent>
+          <TabsContent value="profile" className="pt-6">
+            <ProfilePreferences />
+          </TabsContent>
           {profile?.is_admin && (
             <TabsContent value="admin" className="pt-6">
               <AdminPanel />
@@ -201,6 +209,104 @@ function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+function ProfilePreferences() {
+  const queryClient = useQueryClient();
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["profile-preferences"],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          "display_name, public_slug, avatar_url, profile_public, show_achievements, show_statistics",
+        )
+        .eq("id", user.user?.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [form, setForm] = useState<Record<string, string | boolean> | null>(null);
+  const value = form ?? profile;
+  if (isLoading || !value) return <Loader2 className="animate-spin" />;
+  const update = (key: string, next: string | boolean) => setForm({ ...value, [key]: next });
+  const save = async () => {
+    const { error } = await supabase.rpc(
+      "update_profile_preferences" as never,
+      {
+        p_display_name: value.display_name,
+        p_public_slug: value.public_slug,
+        p_avatar_url: value.avatar_url ?? "",
+        p_profile_public: value.profile_public,
+        p_show_achievements: value.show_achievements,
+        p_show_statistics: value.show_statistics,
+      } as never,
+    );
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Preferências salvas");
+      setForm(null);
+      queryClient.invalidateQueries({ queryKey: ["profile-preferences"] });
+    }
+  };
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>Perfil público</CardTitle>
+        <CardDescription>Controle o que outras pessoas podem ver no seu perfil.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div>
+          <Label>Nome público</Label>
+          <Input
+            value={String(value.display_name ?? "")}
+            onChange={(e) => update("display_name", e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Link público</Label>
+          <Input
+            value={String(value.public_slug ?? "")}
+            onChange={(e) => update("public_slug", e.target.value.toLowerCase())}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">/u/{String(value.public_slug ?? "")}</p>
+        </div>
+        <div>
+          <Label>Avatar (URL opcional)</Label>
+          <Input
+            value={String(value.avatar_url ?? "")}
+            onChange={(e) => update("avatar_url", e.target.value)}
+          />
+        </div>
+        <div className="space-y-4 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <Label>Perfil público</Label>
+            <Switch
+              checked={Boolean(value.profile_public)}
+              onCheckedChange={(next) => update("profile_public", next)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Mostrar conquistas</Label>
+            <Switch
+              checked={Boolean(value.show_achievements)}
+              onCheckedChange={(next) => update("show_achievements", next)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Mostrar estatísticas</Label>
+            <Switch
+              checked={Boolean(value.show_statistics)}
+              onCheckedChange={(next) => update("show_statistics", next)}
+            />
+          </div>
+        </div>
+        <Button onClick={save}>Salvar perfil</Button>
+      </CardContent>
+    </Card>
   );
 }
 
