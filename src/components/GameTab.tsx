@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins, Loader2, Ticket, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,16 +7,65 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScratchCard } from "@/components/ScratchCard";
-import { formatBRL, useProfileUpdater } from "@/hooks/useProfile";
+import { formatBRL, profileQueryKey, useProfileUpdater } from "@/hooks/useProfile";
+
+type ResultType = "none" | "points" | "credits" | "combined";
 
 type PlayResult = {
+  id: string;
   prize: number;
   new_balance: number;
   new_points: number;
   points_earned: number;
+  math_version_id: string;
+  result_type: ResultType;
+  idempotent: boolean;
 };
 
+function readFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parsePlayResult(value: unknown): PlayResult | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const prize = readFiniteNumber(raw.prize);
+  const newBalance = readFiniteNumber(raw.new_balance);
+  const newPoints = readFiniteNumber(raw.new_points);
+  const pointsEarned = readFiniteNumber(raw.points_earned);
+  const resultType = raw.result_type;
+
+  if (
+    typeof raw.id !== "string" ||
+    typeof raw.math_version_id !== "string" ||
+    prize === null ||
+    newBalance === null ||
+    newPoints === null ||
+    pointsEarned === null ||
+    !["none", "points", "credits", "combined"].includes(String(resultType))
+  ) {
+    return null;
+  }
+
+  return {
+    id: raw.id,
+    prize,
+    new_balance: newBalance,
+    new_points: newPoints,
+    points_earned: pointsEarned,
+    math_version_id: raw.math_version_id,
+    result_type: resultType as ResultType,
+    idempotent: raw.idempotent === true,
+  };
+}
+
 export function GameTab() {
+  const qc = useQueryClient();
   const updateProfile = useProfileUpdater();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [result, setResult] = useState<(PlayResult & { title: string }) | null>(null);
@@ -48,14 +97,22 @@ export function GameTab() {
       } as never,
     );
     setPlayingId(null);
+
     if (error) {
       toast.error(error.message);
       return;
     }
-    const res = data as unknown as PlayResult;
+
+    const res = parsePlayResult(data);
+    if (!res) {
+      toast.error("O servidor retornou uma resposta de jogada inválida. Tente novamente.");
+      return;
+    }
+
     pendingRequestIds.current.delete(id);
-    updateProfile({ balance: Number(res.new_balance), points: Number(res.new_points) });
-    setResult({ ...res, prize: Number(res.prize), title });
+    updateProfile({ balance: res.new_balance, points: res.new_points });
+    await qc.invalidateQueries({ queryKey: profileQueryKey });
+    setResult({ ...res, title });
   };
 
   if (result) {
@@ -69,7 +126,7 @@ export function GameTab() {
         <CardContent>
           <ScratchCard
             prize={result.prize}
-            pointsEarned={Number(result.points_earned)}
+            pointsEarned={result.points_earned}
             onReset={() => setResult(null)}
           />
         </CardContent>
