@@ -24,7 +24,10 @@ export function AdminPanel() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   Operação segura
                 </p>
-                <h1 id="admin-panel-title" className="text-2xl font-black tracking-tight sm:text-3xl">
+                <h1
+                  id="admin-panel-title"
+                  className="text-2xl font-black tracking-tight sm:text-3xl"
+                >
                   Painel Administrativo
                 </h1>
               </div>
