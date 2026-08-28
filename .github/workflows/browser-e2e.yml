@@ -28,14 +28,11 @@ jobs:
       - name: Install application dependencies
         run: npm install --package-lock=false
 
-      - name: Install pinned Playwright
-        run: npm install --no-save --package-lock=false playwright@1.62.1
+      - name: Install pinned browser tools
+        run: npm install --no-save --package-lock=false playwright@1.62.1 wrangler@4.126.0
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-
-      - name: Install pinned Wrangler
-        run: npm install --no-save --package-lock=false wrangler@4.126.0
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
