@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
+import { AdminInsightPanel } from "@/components/AdminInsightPanel";
 import { AdminWorkspace } from "@/components/AdminWorkspace";
 import { DailyScratchPanel, MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 
@@ -156,6 +157,7 @@ function Dashboard() {
 
           {profile?.is_admin && (
             <TabsContent value="admin" className="pt-6">
+              <AdminInsightPanel />
               <AdminWorkspace />
             </TabsContent>
           )}
