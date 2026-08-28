@@ -18,9 +18,9 @@ test("frontend never contains a service role key or client-side result RNG", asy
 
 test("scratch play, redemption and daily claim are idempotent in database migrations", async () => {
   const [math, store, daily] = await Promise.all([
-    read("supabase/migrations/20260828060000_scratch_math_engine_v1.sql"),
-    read("supabase/migrations/20260828090000_reward_store_ledger.sql"),
-    read("supabase/migrations/20260828070000_mystery_daily_scratch.sql"),
+    read("supabase/migrations/20260828053538_scratch_math_engine_v1_retry.sql"),
+    read("supabase/migrations/20260828054553_reward_store_ledger.sql"),
+    read("supabase/migrations/20260828053758_mystery_daily_scratch.sql"),
   ]);
   assert.match(math, /plays_user_request_unique/);
   assert.match(store, /redemptions_user_request_unique/);
@@ -29,7 +29,7 @@ test("scratch play, redemption and daily claim are idempotent in database migrat
 
 test("published math and mystery pools are guarded by database triggers", async () => {
   const source = await read(
-    "supabase/migrations/20260828120000_validate_math_and_mystery_versions.sql",
+    "supabase/migrations/20260828055338_validate_math_and_mystery_versions.sql",
   );
   assert.match(source, /Versão matemática publicada é imutável/);
   assert.match(source, /Não é possível publicar versão sem resultados/);
@@ -38,8 +38,8 @@ test("published math and mystery pools are guarded by database triggers", async 
 
 test("ledger and audit logs have database-level duplicate and append-only protections", async () => {
   const [store, audit] = await Promise.all([
-    read("supabase/migrations/20260828090000_reward_store_ledger.sql"),
-    read("supabase/migrations/20260828100000_admin_metrics_audit_realtime.sql"),
+    read("supabase/migrations/20260828054553_reward_store_ledger.sql"),
+    read("supabase/migrations/20260828054853_admin_metrics_audit_realtime.sql"),
   ]);
   assert.match(store, /unique\(reference_type,reference_id,transaction_type\)/);
   assert.match(audit, /Audit logs são append-only/);
@@ -47,7 +47,7 @@ test("ledger and audit logs have database-level duplicate and append-only protec
 
 test("production hardening records scratch movements and rejects invalid redemption transitions", async () => {
   const migration = await read(
-    "supabase/migrations/20260828140000_production_ledger_authorization_and_transitions.sql",
+    "supabase/migrations/20260828060319_production_ledger_authorization_and_transitions.sql",
   );
   assert.match(migration, /create table if not exists public\.credit_ledger/i);
   assert.match(migration, /'SCRATCH_COST'/);
