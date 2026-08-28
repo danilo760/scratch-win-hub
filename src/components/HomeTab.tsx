@@ -4,23 +4,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useProfile } from "@/hooks/useProfile";
+import { formatBRL, useProfile } from "@/hooks/useProfile";
+import { useSpecialScratchStatus } from "@/hooks/useSpecialScratchStatus";
 
 type Props = { onNavigate: (tab: string) => void };
 
+type HighlightCard = {
+  id: string;
+  title: string;
+  price: number;
+  rarity_name: string;
+};
+
+function parseHighlightCards(value: unknown): HighlightCard[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const raw = entry as Record<string, unknown>;
+    const price = typeof raw.price === "number" ? raw.price : Number(raw.price);
+    if (
+      typeof raw.id !== "string" ||
+      typeof raw.title !== "string" ||
+      typeof raw.rarity_name !== "string" ||
+      !Number.isFinite(price)
+    ) {
+      return [];
+    }
+    return [{ id: raw.id, title: raw.title, price, rarity_name: raw.rarity_name }];
+  });
+}
+
 export function HomeTab({ onNavigate }: Props) {
   const { data: profile } = useProfile();
+  const { data: specialStatus, isLoading: specialLoading } = useSpecialScratchStatus();
   const { data: cards = [] } = useQuery({
     queryKey: ["home-scratchcards"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("scratchcards")
-        .select("id,title,price,points_reward")
-        .eq("active", true)
-        .order("price")
-        .limit(4);
+      const { data, error } = await supabase.rpc("get_active_scratchcards_v1" as never);
       if (error) throw error;
-      return data;
+      return parseHighlightCards(data).slice(0, 4);
     },
   });
   const { data: achievements = [] } = useQuery({
@@ -31,6 +53,7 @@ export function HomeTab({ onNavigate }: Props) {
       return data;
     },
   });
+
   return (
     <div className="space-y-6 pb-6">
       <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-card to-primary/10">
@@ -41,25 +64,38 @@ export function HomeTab({ onNavigate }: Props) {
             </p>
             <h1 className="mt-1 text-2xl font-black">{profile?.points ?? 0} pontos</h1>
             <p className="text-xs text-muted-foreground">
-              Saldo {profile?.balance ?? 0} · Nível e XP no seu perfil
+              Saldo {formatBRL(profile?.balance ?? 0)} · Nível e XP no seu perfil
             </p>
           </div>
           <UserCircle className="size-12 text-primary" aria-hidden="true" />
         </CardContent>
       </Card>
+
       <Card className="border-accent/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-accent" /> Raspadinha diária
           </CardTitle>
-          <CardDescription>Uma cortesia por dia, validada diretamente no servidor.</CardDescription>
+          <CardDescription>
+            {specialStatus?.daily_available
+              ? "Uma cortesia por dia, escolhida e validada diretamente no servidor."
+              : "Configuração pendente. A cortesia diária ficará disponível quando for publicada."}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button className="w-full" onClick={() => onNavigate("daily")}>
-            Ver raspadinha diária
+        <CardContent className="space-y-2">
+          {!specialLoading && !specialStatus?.daily_available && (
+            <Badge variant="secondary">Em breve</Badge>
+          )}
+          <Button
+            className="w-full"
+            disabled={specialLoading || !specialStatus?.daily_available}
+            onClick={() => onNavigate("daily")}
+          >
+            {specialStatus?.daily_available ? "Ver raspadinha diária" : "Em breve"}
           </Button>
         </CardContent>
       </Card>
+
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-xl font-black">
@@ -74,27 +110,42 @@ export function HomeTab({ onNavigate }: Props) {
             <Card key={card.id} className="min-w-0">
               <CardContent className="p-3">
                 <strong className="block truncate text-sm">{card.title}</strong>
-                <Badge className="mt-2" variant="secondary">
-                  {card.points_reward} pts
-                </Badge>
+                <div className="mt-2 flex flex-wrap items-center gap-1">
+                  <Badge variant="secondary">{formatBRL(card.price)}</Badge>
+                  <Badge variant="outline">{card.rarity_name}</Badge>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </section>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-primary" /> Raspadinha misteriosa
           </CardTitle>
-          <CardDescription>Descubra sua raridade antes de iniciar a experiência.</CardDescription>
+          <CardDescription>
+            {specialStatus?.mystery_available
+              ? "O pool publicado seleciona a experiência antes da revelação."
+              : "Nenhum pool misterioso está publicado no momento."}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button variant="outline" className="w-full" onClick={() => onNavigate("mystery")}>
-            Abrir misteriosa
+        <CardContent className="space-y-2">
+          {!specialLoading && !specialStatus?.mystery_available && (
+            <Badge variant="secondary">Em breve</Badge>
+          )}
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={specialLoading || !specialStatus?.mystery_available}
+            onClick={() => onNavigate("mystery")}
+          >
+            {specialStatus?.mystery_available ? "Abrir misteriosa" : "Em breve"}
           </Button>
         </CardContent>
       </Card>
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardContent className="p-4">
