@@ -128,21 +128,21 @@ async function exerciseScratchAndStore(page) {
   await page.getByText(/Prêmio solicitado! Protocolo:/).waitFor({ state: "visible", timeout: 10_000 });
 
   await page.getByRole("tab", { name: "Prêmios" }).click();
-  await page.getByRole("heading", { name: "Meus Prêmios" }).waitFor({ state: "visible" });
+  await page.getByText("Meus Prêmios", { exact: true }).first().waitFor({ state: "visible" });
   await page.getByText("Camiseta Exclusiva", { exact: true }).waitFor({ state: "visible" });
   await assertNoHorizontalOverflow(page, "my rewards");
 }
 
 async function exerciseProfile(page) {
   await page.getByRole("tab", { name: "Perfil" }).click();
-  await page.getByRole("heading", { name: "Perfil público" }).waitFor({ state: "visible" });
-  const nameInput = page.locator("input").filter({ has: undefined }).first();
+  await page.getByText("Perfil público", { exact: true }).first().waitFor({ state: "visible" });
+  const nameInput = page.locator("input").first();
   await nameInput.fill("Browser QA");
-  await page.getByRole("button", { name: "Salvar" }).click();
+  await page.getByRole("button", { name: "Salvar perfil" }).click();
   await page.getByText("Preferências salvas", { exact: true }).waitFor({ state: "visible" });
   await page.reload();
   await page.getByRole("tab", { name: "Perfil" }).click();
-  await page.getByRole("heading", { name: "Perfil público" }).waitFor({ state: "visible" });
+  await page.getByText("Perfil público", { exact: true }).first().waitFor({ state: "visible" });
   assert.equal(await page.locator("input").first().inputValue(), "Browser QA", "profile preference did not persist");
 }
 
