@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Coins, Loader2, Ticket, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export function GameTab() {
   const updateProfile = useProfileUpdater();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [result, setResult] = useState<(PlayResult & { title: string }) | null>(null);
+  const pendingRequestIds = useRef(new Map<string, string>());
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ["scratchcards"],
@@ -36,11 +37,13 @@ export function GameTab() {
 
   const play = async (id: string, title: string) => {
     setPlayingId(id);
+    const requestId = pendingRequestIds.current.get(id) ?? crypto.randomUUID();
+    pendingRequestIds.current.set(id, requestId);
     const { data, error } = await supabase.rpc(
       "play_scratchcard_v1" as never,
       {
         p_card_id: id,
-        p_client_request_id: crypto.randomUUID(),
+        p_client_request_id: requestId,
         p_source: "web",
       } as never,
     );
@@ -50,6 +53,7 @@ export function GameTab() {
       return;
     }
     const res = data as unknown as PlayResult;
+    pendingRequestIds.current.delete(id);
     updateProfile({ balance: Number(res.new_balance), points: Number(res.new_points) });
     setResult({ ...res, prize: Number(res.prize), title });
   };
