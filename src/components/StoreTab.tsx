@@ -54,16 +54,33 @@ export function StoreTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const pendingRequestIds = useRef(new Map<string, string>());
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items, isLoading, error: storeError } = useQuery({
     queryKey: ["store_items"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("store_items")
-        .select("id, title, description, image_url, points_cost, stock_available, per_user_limit")
-        .eq("active", true)
-        .order("points_cost");
-      if (error) throw error;
-      return data;
+      const [itemsResult, redemptionsResult] = await Promise.all([
+        supabase
+          .from("store_items")
+          .select(
+            "id, title, description, image_url, points_cost, stock_available, per_user_limit, display_order",
+          )
+          .eq("active", true)
+          .order("display_order")
+          .order("points_cost"),
+        supabase.from("redemptions").select("item_id, status").neq("status", "CANCELADO"),
+      ]);
+
+      if (itemsResult.error) throw itemsResult.error;
+      if (redemptionsResult.error) throw redemptionsResult.error;
+
+      const usedByItem = new Map<string, number>();
+      for (const redemption of redemptionsResult.data) {
+        usedByItem.set(redemption.item_id, (usedByItem.get(redemption.item_id) ?? 0) + 1);
+      }
+
+      return itemsResult.data.map((item) => ({
+        ...item,
+        redeemed_count: usedByItem.get(item.id) ?? 0,
+      }));
     },
   });
 
@@ -106,6 +123,14 @@ export function StoreTab() {
     );
   }
 
+  if (storeError) {
+    return (
+      <p role="alert" className="py-16 text-center text-destructive">
+        Não foi possível carregar a loja. Tente novamente.
+      </p>
+    );
+  }
+
   if (!items?.length) {
     return (
       <p className="py-16 text-center text-muted-foreground">Nenhum item disponível na loja.</p>
@@ -117,8 +142,9 @@ export function StoreTab() {
       {items.map((item) => {
         const noStock = item.stock_available <= 0;
         const noPoints = (profile?.points ?? 0) < item.points_cost;
+        const limitReached = item.redeemed_count >= item.per_user_limit;
         return (
-          <Card key={item.id} className="flex flex-col">
+          <Card key={item.id} className="flex flex-col overflow-hidden">
             {item.image_url && (
               <img src={item.image_url} alt="" className="h-36 w-full object-cover" />
             )}
@@ -130,25 +156,32 @@ export function StoreTab() {
             </CardHeader>
             <CardContent className="flex flex-1 flex-col justify-between gap-4">
               <p className="text-sm text-muted-foreground">{item.description}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-black text-accent">{item.points_cost} pts</span>
-                <Badge variant={noStock ? "destructive" : "secondary"} className="gap-1">
-                  <Package className="size-3.5" />
-                  {noStock
-                    ? "ESGOTADO"
-                    : item.stock_available <= 3
-                      ? `🔥 Restam apenas ${item.stock_available}`
-                      : `${item.stock_available} em estoque`}
-                </Badge>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xl font-black text-accent">{item.points_cost} pts</span>
+                  <Badge variant={noStock ? "destructive" : "secondary"} className="gap-1">
+                    <Package className="size-3.5" />
+                    {noStock
+                      ? "ESGOTADO"
+                      : item.stock_available <= 3
+                        ? `🔥 Restam apenas ${item.stock_available}`
+                        : `${item.stock_available} em estoque`}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Limite por usuário: {item.redeemed_count}/{item.per_user_limit}
+                </p>
               </div>
               <Button
                 variant="glow"
                 className="w-full"
-                disabled={busyId === item.id || noStock || noPoints}
+                disabled={busyId === item.id || noStock || noPoints || limitReached}
                 onClick={() => redeem(item.id)}
               >
                 {busyId === item.id ? (
                   <Loader2 className="size-4 animate-spin" />
+                ) : limitReached ? (
+                  "Limite atingido"
                 ) : noPoints ? (
                   "Pontos insuficientes"
                 ) : (
