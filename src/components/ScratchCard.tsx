@@ -3,14 +3,16 @@ import { Sparkles, Frown, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/hooks/useProfile";
 
+export type ScratchRarity = "bronze" | "prata" | "ouro" | "diamante";
+
 type Props = {
   prize: number;
   pointsEarned: number;
   onReset: () => void;
-  rarity?: "bronze" | "prata" | "ouro" | "diamante";
+  rarity: ScratchRarity;
 };
 
-export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }: Props) {
+export function ScratchCard({ prize, pointsEarned, onReset, rarity }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const [revealed, setRevealed] = useState(false);
