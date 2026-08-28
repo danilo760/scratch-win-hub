@@ -7,7 +7,6 @@ import {
   LogOut,
   Wallet,
   Trophy,
-  Ticket,
   Settings,
   Loader2,
   Copy,
@@ -27,6 +26,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
+import { GameTab } from "@/components/GameTab";
+
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -58,31 +59,6 @@ function Dashboard() {
   const qc = useQueryClient();
   const { data: profile } = useProfile();
   const [tab, setTab] = useState("home");
-  const [quantity, setQuantity] = useState<Record<string, number>>({});
-  const { data: raffles, isLoading } = useQuery({
-    queryKey: ["raffles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("raffles")
-        .select("*, raffle_tickets(count)")
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-  const buy = async (raffle: any) => {
-    const count = quantity[raffle.id] || 1;
-    const { error } = await supabase.rpc("buy_raffle_tickets", {
-      p_raffle_id: raffle.id,
-      p_quantity: count,
-    });
-    if (error) toast.error("Não foi possível comprar: " + error.message);
-    else {
-      toast.success("Bilhetes reservados com sucesso!");
-      qc.invalidateQueries({ queryKey: ["raffles"] });
-    }
-  };
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -126,9 +102,6 @@ function Dashboard() {
             <TabsTrigger value="scratch" className="shrink-0 gap-1.5">
               <Sparkles className="size-4" /> Raspadinhas
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="shrink-0 gap-1.5">
-              <Ticket className="size-4" /> Meus bilhetes
-            </TabsTrigger>
             <TabsTrigger value="wallet" className="shrink-0 gap-1.5">
               <Wallet className="size-4" /> Carteira
             </TabsTrigger>
@@ -147,91 +120,47 @@ function Dashboard() {
               </TabsTrigger>
             )}
           </TabsList>
+
           <TabsContent value="home" className="pt-6">
             <HomeTab onNavigate={setTab} />
           </TabsContent>
+
           <TabsContent value="scratch" className="pt-6">
             <div className="mb-6">
-              <h1 className="text-3xl font-black">Escolha seu próximo prêmio</h1>
+              <h1 className="text-3xl font-black">Raspadinhas</h1>
               <p className="text-muted-foreground">
-                Bilhetes digitais, sorteios transparentes e muita sorte.
+                Escolha uma raspadinha disponível e revele o resultado definido pelo servidor.
               </p>
             </div>
-            {isLoading ? (
-              <Loader2 className="mx-auto animate-spin" />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {raffles?.map((r: any) => (
-                  <Card key={r.id} className="overflow-hidden">
-                    <img src={r.image_url} className="h-48 w-full object-cover" />
-                    <CardHeader>
-                      <CardTitle>{r.title}</CardTitle>
-                      <CardDescription>{r.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between text-sm">
-                        <span>R$ {r.ticket_price / 100} por bilhete</span>
-                        <span>{r.total_tickets} bilhetes</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-secondary">
-                        <div
-                          className="h-2 rounded-full bg-primary"
-                          style={{
-                            width: `${Math.min(100, ((r.raffle_tickets?.[0]?.count || 0) / r.total_tickets) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={quantity[r.id] || 1}
-                          onChange={(e) =>
-                            setQuantity({ ...quantity, [r.id]: Number(e.target.value) })
-                          }
-                        />
-                        <Button className="flex-1" onClick={() => buy(r)}>
-                          <Ticket className="size-4" /> Comprar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <GameTab />
           </TabsContent>
+
           <TabsContent value="daily" className="pt-6">
             <DailyScratchPanel />
           </TabsContent>
+
           <TabsContent value="mystery" className="pt-6">
             <MysteryScratchPanel />
           </TabsContent>
-          <TabsContent value="tickets" className="pt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Meus bilhetes</CardTitle>
-                <CardDescription>Acompanhe suas participações e resultados.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TicketList />
-              </CardContent>
-            </Card>
-          </TabsContent>
+
           <TabsContent value="wallet" className="pt-6">
             <WalletPanel />
           </TabsContent>
+
           <TabsContent value="store" className="pt-6">
             <Suspense fallback={<Loader2 className="animate-spin" />}>
               <StoreTab />
             </Suspense>
           </TabsContent>
+
           <TabsContent value="rewards" className="pt-6">
             <MyRewards />
           </TabsContent>
+
           <TabsContent value="profile" className="pt-6">
             <ProfilePreferences />
           </TabsContent>
+
           {profile?.is_admin && (
             <TabsContent value="admin" className="pt-6">
               <AdminPanel />
@@ -259,6 +188,7 @@ function DailyScratchPanel() {
   });
   const [busy, setBusy] = useState(false);
   const pendingRequestId = useRef<string | null>(null);
+
   const claim = async () => {
     if (!cards[0]) return;
     setBusy(true);
@@ -278,6 +208,7 @@ function DailyScratchPanel() {
       );
     }
   };
+
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader>
@@ -304,6 +235,7 @@ function DailyScratchPanel() {
 function MysteryScratchPanel() {
   const [busy, setBusy] = useState(false);
   const pendingRequestId = useRef<string | null>(null);
+
   const open = async () => {
     setBusy(true);
     pendingRequestId.current ??= crypto.randomUUID();
@@ -318,6 +250,7 @@ function MysteryScratchPanel() {
       toast.success("Raridade selecionada e registrada com segurança.");
     }
   };
+
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader>
@@ -351,7 +284,9 @@ function MyRewards() {
       return data;
     },
   });
+
   if (isLoading) return <Loader2 className="animate-spin" />;
+
   return (
     <Card>
       <CardHeader>
@@ -411,10 +346,14 @@ function ProfilePreferences() {
       return data;
     },
   });
+
   const [form, setForm] = useState<Record<string, string | boolean> | null>(null);
   const value = form ?? profile;
+
   if (isLoading || !value) return <Loader2 className="animate-spin" />;
+
   const update = (key: string, next: string | boolean) => setForm({ ...value, [key]: next });
+
   const save = async () => {
     const { error } = await supabase.rpc(
       "update_profile_preferences" as never,
@@ -434,6 +373,7 @@ function ProfilePreferences() {
       queryClient.invalidateQueries({ queryKey: ["profile-preferences"] });
     }
   };
+
   return (
     <Card className="max-w-xl">
       <CardHeader>
@@ -492,51 +432,10 @@ function ProfilePreferences() {
   );
 }
 
-function TicketList() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-tickets"],
-    queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from("raffle_tickets")
-        .select("ticket_number, purchased_at, raffles(title, status, winner_ticket)")
-        .eq("user_id", user.user?.id)
-        .order("purchased_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-  if (isLoading) return <Loader2 className="animate-spin" />;
-  return (
-    <div className="space-y-3">
-      {data?.length ? (
-        data.map((t: any) => (
-          <div
-            key={`${t.ticket_number}-${t.purchased_at}`}
-            className="flex items-center justify-between rounded-lg border p-3"
-          >
-            <span>
-              {t.raffles?.title} · Bilhete #{t.ticket_number}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {t.raffles?.status === "drawn"
-                ? t.raffles.winner_ticket === t.ticket_number
-                  ? "Vencedor!"
-                  : "Encerrado"
-                : "Participando"}
-            </span>
-          </div>
-        ))
-      ) : (
-        <p className="text-muted-foreground">Você ainda não possui bilhetes.</p>
-      )}
-    </div>
-  );
-}
-
 function WalletPanel() {
   const [amount, setAmount] = useState(100);
   const [sent, setSent] = useState(false);
+
   const submit = async () => {
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("credit_transactions").insert({
@@ -552,6 +451,7 @@ function WalletPanel() {
       toast.success("Solicitação enviada para aprovação");
     }
   };
+
   return (
     <Card className="max-w-xl">
       <CardHeader>
@@ -582,10 +482,6 @@ function WalletPanel() {
 }
 
 function AdminPanel() {
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState(10);
-  const [total, setTotal] = useState(100);
-  const [description, setDescription] = useState("");
   const { data: dashboard } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
@@ -594,16 +490,7 @@ function AdminPanel() {
       return data as unknown as { cards: Record<string, number> };
     },
   });
-  const create = async () => {
-    const { error } = await supabase
-      .from("raffles")
-      .insert({ title, description, ticket_price: price, total_tickets: total });
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Sorteio criado");
-      setTitle("");
-    }
-  };
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -618,34 +505,12 @@ function AdminPanel() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Administração de sorteios</CardTitle>
-          <CardDescription>Cadastre novos prêmios e acompanhe a operação.</CardDescription>
+          <CardTitle>Administração de raspadinhas</CardTitle>
+          <CardDescription>
+            O fluxo legado de sorteios foi retirado. As ferramentas administrativas de raspadinhas
+            serão exibidas aqui usando o schema real do motor matemático.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label>Título</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nome do prêmio"
-            />
-          </div>
-          <div>
-            <Label>Preço do bilhete (créditos)</Label>
-            <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
-          </div>
-          <div>
-            <Label>Total de bilhetes</Label>
-            <Input type="number" value={total} onChange={(e) => setTotal(Number(e.target.value))} />
-          </div>
-          <div>
-            <Label>Descrição</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-          <Button className="sm:col-span-2" onClick={create}>
-            Criar sorteio
-          </Button>
-        </CardContent>
       </Card>
     </div>
   );
