@@ -4,7 +4,7 @@ import { AdminWorkspace } from "@/components/AdminWorkspace";
 import { Badge } from "@/components/ui/badge";
 
 const adminSurfaceClass =
-  "rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30";
+  "rounded-2xl border border-border/70 bg-card/40 p-3 shadow-sm sm:p-4 sm:[&_[role=tablist]]:flex-wrap [&_[role=tablist]]:rounded-xl [&_[role=tablist]]:border [&_[role=tablist]]:border-border/70 [&_[role=tablist]]:bg-secondary/50 [&_[role=tab]]:rounded-lg [&_table]:overflow-hidden [&_thead]:bg-secondary/50 [&_th]:font-semibold [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-secondary/30";
 
 const adminHeaderClass =
   "relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-5 shadow-sm sm:p-6";
@@ -31,7 +31,10 @@ export function AdminPanel() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   Operação segura
                 </p>
-                <h1 id="admin-panel-title" className="text-2xl font-black tracking-tight sm:text-3xl">
+                <h1
+                  id="admin-panel-title"
+                  className="text-2xl font-black tracking-tight sm:text-3xl"
+                >
                   Painel Administrativo
                 </h1>
               </div>
