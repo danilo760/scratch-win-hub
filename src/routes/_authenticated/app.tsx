@@ -12,6 +12,8 @@ import {
   Loader2,
   Copy,
   UserCircle,
+  ShoppingBag,
+  Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
+import { StoreTab } from "@/components/StoreTab";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -124,6 +127,12 @@ function Dashboard() {
             <TabsTrigger value="wallet" className="flex-1 gap-1.5">
               <Wallet className="size-4" /> Carteira
             </TabsTrigger>
+            <TabsTrigger value="store" className="flex-1 gap-1.5">
+              <ShoppingBag className="size-4" /> Loja
+            </TabsTrigger>
+            <TabsTrigger value="rewards" className="flex-1 gap-1.5">
+              <Gift className="size-4" /> Prêmios
+            </TabsTrigger>
             <TabsTrigger value="profile" className="flex-1 gap-1.5">
               <UserCircle className="size-4" /> Perfil
             </TabsTrigger>
@@ -198,6 +207,12 @@ function Dashboard() {
           <TabsContent value="wallet" className="pt-6">
             <WalletPanel />
           </TabsContent>
+          <TabsContent value="store" className="pt-6">
+            <StoreTab />
+          </TabsContent>
+          <TabsContent value="rewards" className="pt-6">
+            <MyRewards />
+          </TabsContent>
           <TabsContent value="profile" className="pt-6">
             <ProfilePreferences />
           </TabsContent>
@@ -209,6 +224,65 @@ function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+function MyRewards() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-rewards"],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("redemptions")
+        .select(
+          "id, points_spent, status, protocol, fulfillment_code, created_at, store_items(title, image_url)",
+        )
+        .eq("user_id", user.user?.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  if (isLoading) return <Loader2 className="animate-spin" />;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Meus Prêmios</CardTitle>
+        <CardDescription>Solicitações, protocolos e andamento das entregas.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {data?.length ? (
+          data.map((reward: any) => (
+            <div key={reward.id} className="flex items-center gap-3 rounded-lg border p-3">
+              {reward.store_items?.image_url && (
+                <img
+                  src={reward.store_items.image_url}
+                  alt=""
+                  className="size-12 rounded object-cover"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <strong className="block truncate">{reward.store_items?.title}</strong>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(reward.created_at).toLocaleDateString("pt-BR")} · {reward.points_spent}{" "}
+                  pts · {reward.protocol}
+                </span>
+              </div>
+              <div className="text-right text-sm">
+                <strong>{reward.status}</strong>
+                {reward.fulfillment_code && (
+                  <span className="block text-xs text-muted-foreground">
+                    {reward.fulfillment_code}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-muted-foreground">Você ainda não possui prêmios solicitados.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
