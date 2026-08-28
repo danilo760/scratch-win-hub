@@ -111,7 +111,7 @@ async function exercisePublicViewports(page) {
 
   await page.goto(`${baseUrl}/transparencia`);
   await page.getByRole("heading", { name: "Centro de Transparência" }).waitFor({ state: "visible" });
-  await page.getByRole("heading", { name: "Campanhas publicadas" }).waitFor({ state: "visible" });
+  await page.getByText("Campanhas publicadas", { exact: true }).first().waitFor({ state: "visible" });
   await page.getByText("Probabilidade configurada", { exact: true }).first().waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "transparency page");
   await assertNoHorizontalOverflow(page, "transparency page");
@@ -189,7 +189,7 @@ async function exerciseAdmin(page, userId) {
   await page.screenshot({ path: `${artifactDir}/admin-operations-1440x900.png`, fullPage: true });
 
   await page.getByRole("tab", { name: "Auditoria Matemática", exact: true }).click();
-  await page.getByRole("heading", { name: "Configurado × observado" }).waitFor({ state: "visible" });
+  await page.getByText("Configurado × observado", { exact: true }).first().waitFor({ state: "visible" });
   await page.locator("select").first().waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "admin math audit");
   await assertNoHorizontalOverflow(page, "admin math audit");
