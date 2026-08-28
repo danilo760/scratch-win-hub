@@ -31,3 +31,5 @@ jobs:
           name: formatted-admin-panel
           path: src/components/AdminPanel.tsx
           if-no-files-found: error
+
+# Temporary formatter workflow; remove after capturing the canonical output.
