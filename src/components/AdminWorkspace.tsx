@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 14688)
-Total output lines: 1866
-
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -821,7 +818,327 @@ function ScratchcardsPanel({
                 <Badge variant={card.active ? "secondary" : "outline"}>
                   {card.active ? "Ativa" : "Inativa"}
                 </Badge>
-                <Button size="sm" variant="outline" onClick={() => setEditing(card)}…2688 tokens truncated…                 </select>
+                <Button size="sm" variant="outline" onClick={() => setEditing(card)}>
+                  Editar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{editing ? "Editar raspadinha" : "Nova raspadinha"}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Field label="Título">
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          </Field>
+          <Field label="Preço">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </Field>
+          <Toggle label="Ativa" checked={active} onCheckedChange={setActive} />
+          <Toggle label="Configurar como diária" checked={daily} onCheckedChange={setDaily} />
+          <Button className="w-full" onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{" "}
+            Salvar
+          </Button>
+          {editing && (
+            <Button className="w-full" variant="ghost" onClick={reset}>
+              Cancelar edição
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function OutcomesPanel({
+  versions,
+  cards,
+}: {
+  versions: MathVersionSnapshot[];
+  cards: ScratchcardAdmin[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Resultados matemáticos</CardTitle>
+        <CardDescription>
+          Pesos são a fonte de verdade; probabilidades abaixo são informativas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {versions.map((version) => {
+          const total = version.outcomes.reduce((sum, outcome) => sum + outcome.weight, 0);
+          const card = cards.find((item) => item.id === version.scratchcard_id);
+          return (
+            <div key={version.id} className="rounded-lg border p-4">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <strong>
+                  {card?.title ?? "Raspadinha"} — {version.version_name}
+                </strong>
+                <Badge variant={version.status === "PUBLISHED" ? "default" : "secondary"}>
+                  {version.status}
+                </Badge>
+                {version.rarity_name && <Badge variant="outline">{version.rarity_name}</Badge>}
+              </div>
+              <div className="space-y-2">
+                {version.outcomes.map((outcome) => (
+                  <div
+                    key={outcome.id}
+                    className="grid gap-1 rounded bg-secondary/40 p-2 text-sm sm:grid-cols-5"
+                  >
+                    <span>{outcome.name}</span>
+                    <span>{formatBRL(outcome.prize)}</span>
+                    <span>{outcome.points} pts</span>
+                    <span>peso {outcome.weight}</span>
+                    <span>
+                      {total > 0 ? ((outcome.weight / total) * 100).toFixed(4) : "0.0000"}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RaritiesPanel({ rarities }: { rarities: RaritySnapshot[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Raridades</CardTitle>
+        <CardDescription>
+          Slugs reais do banco. Não são traduzidos para nomes internos em inglês.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {rarities.map((rarity) => (
+          <div key={rarity.id} className="rounded-lg border p-4">
+            <Badge variant="outline">{rarity.slug}</Badge>
+            <strong className="mt-2 block">{rarity.name}</strong>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {rarity.description ?? "Sem descrição"}
+            </p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DailyAdminPanel({
+  cards,
+  onChanged,
+}: {
+  cards: ScratchcardAdmin[];
+  onChanged: () => Promise<void>;
+}) {
+  const current = cards.find((card) => card.is_daily_eligible)?.id ?? "";
+  const [selected, setSelected] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const eligible = cards.filter((card) => card.active && card.published_version_id);
+
+  useEffect(() => setSelected(current), [current]);
+
+  const save = async () => {
+    setBusy(true);
+    const { error } = await supabase.rpc(
+      "admin_set_daily_scratch_v1" as never,
+      { p_card_id: selected || null } as never,
+    );
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await onChanged();
+    toast.success(selected ? "Raspadinha diária configurada." : "Raspadinha diária desativada.");
+  };
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>Configuração da Diária</CardTitle>
+        <CardDescription>
+          O cliente nunca escolhe o card_id; a RPC v2 resolve esta configuração no servidor.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Field label="Raspadinha diária">
+          <select
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            <option value="">Nenhuma — mostrar Em breve</option>
+            {eligible.map((card) => (
+              <option key={card.id} value={card.id}>
+                {card.title} — {card.rarity_name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Button className="w-full" onClick={save} disabled={busy}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />} Salvar
+          configuração
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MysteryAdminPanel({
+  versions,
+  cards,
+  onChanged,
+}: {
+  versions: MysteryVersionAdmin[];
+  cards: ScratchcardAdmin[];
+  onChanged: () => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [selectedVersion, setSelectedVersion] = useState(versions[0]?.id ?? "");
+  const [cardId, setCardId] = useState(
+    cards.find((card) => card.active && card.published_version_id)?.id ?? "",
+  );
+  const [weight, setWeight] = useState("1");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!versions.some((version) => version.id === selectedVersion))
+      setSelectedVersion(versions[0]?.id ?? "");
+  }, [selectedVersion, versions]);
+
+  const selected = versions.find((version) => version.id === selectedVersion) ?? null;
+  const validCards = cards.filter((card) => card.active && card.published_version_id);
+
+  const create = async () => {
+    if (!name.trim()) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc(
+      "admin_create_mystery_draft_v1" as never,
+      { p_name: name.trim() } as never,
+    );
+    setBusy(false);
+    if (error) return void toast.error(error.message);
+    setName("");
+    if (typeof data === "string") setSelectedVersion(data);
+    await onChanged();
+    toast.success("Pool Misteriosa DRAFT criado.");
+  };
+
+  const addEntry = async () => {
+    const parsedWeight = Number(weight);
+    if (
+      !selected ||
+      selected.status !== "DRAFT" ||
+      !cardId ||
+      !Number.isFinite(parsedWeight) ||
+      parsedWeight <= 0
+    )
+      return;
+    setBusy(true);
+    const { error } = await supabase.rpc(
+      "admin_add_mystery_entry_v1" as never,
+      {
+        p_mystery_version_id: selected.id,
+        p_scratchcard_id: cardId,
+        p_weight: parsedWeight,
+      } as never,
+    );
+    setBusy(false);
+    if (error) return void toast.error(error.message);
+    await onChanged();
+    toast.success("Entrada adicionada ao pool.");
+  };
+
+  const publish = async () => {
+    if (!selected || selected.status !== "DRAFT") return;
+    setBusy(true);
+    const { error } = await supabase.rpc(
+      "admin_publish_mystery_v1" as never,
+      { p_mystery_version_id: selected.id } as never,
+    );
+    setBusy(false);
+    if (error) return void toast.error(error.message);
+    await onChanged();
+    toast.success("Pool Misteriosa publicado e bloqueado para edição.");
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Novo pool Misteriosa</CardTitle>
+        </CardHeader>
+        <CardContent className="flex gap-2">
+          <Input
+            placeholder="Nome da versão"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button onClick={create} disabled={busy || !name.trim()}>
+            <Plus className="size-4" /> Criar DRAFT
+          </Button>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Pool e pesos</CardTitle>
+          <CardDescription>
+            Somente DRAFT pode ser alterada; publicação exige cards ativos com matemática publicada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <select
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={selectedVersion}
+            onChange={(e) => setSelectedVersion(e.target.value)}
+          >
+            <option value="">Selecione um pool</option>
+            {versions.map((version) => (
+              <option key={version.id} value={version.id}>
+                {version.name} — {version.status}
+              </option>
+            ))}
+          </select>
+          {selected && (
+            <>
+              <div className="space-y-2">
+                {selected.entries.map((entry) => (
+                  <MysteryEntryRow
+                    key={entry.id}
+                    entry={entry}
+                    readOnly={selected.status !== "DRAFT"}
+                    onChanged={onChanged}
+                  />
+                ))}
+              </div>
+              {selected.status === "DRAFT" ? (
+                <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto]">
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    value={cardId}
+                    onChange={(e) => setCardId(e.target.value)}
+                  >
+                    {validCards.map((card) => (
+                      <option key={card.id} value={card.id}>
+                        {card.title} — {card.rarity_name}
+                      </option>
+                    ))}
+                  </select>
                   <Input
                     type="number"
                     min="0.0001"
