@@ -1,0 +1,13 @@
+create index if not exists idx_credit_transactions_user_id on public.credit_transactions(user_id);
+create index if not exists idx_raffle_tickets_user_id on public.raffle_tickets(user_id);
+create index if not exists idx_raffle_tickets_raffle_id on public.raffle_tickets(raffle_id);
+drop policy if exists "active raffles are public" on public.raffles;
+create policy "active raffles are public" on public.raffles for select using (status = 'active' or (select auth.uid()) is not null);
+drop policy if exists "users see own tickets" on public.raffle_tickets;
+create policy "users see own tickets" on public.raffle_tickets for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "users see own transactions" on public.credit_transactions;
+create policy "users see own transactions" on public.credit_transactions for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "users create pix requests" on public.credit_transactions;
+create policy "users create pix requests" on public.credit_transactions for insert to authenticated with check (user_id = (select auth.uid()) and type = 'pix_pending' and status = 'pending');
+drop policy if exists raffles_admin_insert on public.raffles;
+create policy raffles_admin_insert on public.raffles for insert to authenticated with check (exists (select 1 from profiles where id=(select auth.uid()) and is_admin=true));
