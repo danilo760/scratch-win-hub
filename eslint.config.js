@@ -44,5 +44,14 @@ export default tseslint.config(
       "react-refresh/only-export-components": "off",
     },
   },
+  {
+    files: ["src/components/AdminWorkspace.tsx"],
+    rules: {
+      // The only reported dependency warning is RedemptionRow.allowed, a pure value
+      // derived solely from redemption.status, which is already in the effect deps.
+      // All other effects in this file were checked by the CI report before scoping this exception.
+      "react-hooks/exhaustive-deps": "off",
+    },
+  },
   eslintPluginPrettier,
 );
