@@ -133,6 +133,8 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }:
         </div>
         <canvas
           ref={canvasRef}
+          aria-label="Área de raspagem. Use o dedo ou mouse para revelar o resultado."
+          role="img"
           className={`absolute inset-0 h-full w-full touch-none transition-opacity duration-300 ${
             revealed ? "pointer-events-none opacity-0" : "cursor-grab"
           }`}
