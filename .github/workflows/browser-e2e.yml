@@ -29,7 +29,7 @@ jobs:
         run: npm install --package-lock=false
 
       - name: Install pinned browser tools
-        run: npm install --no-save --package-lock=false playwright@1.62.1 wrangler@4.126.0
+        run: npm install --no-save --package-lock=false playwright@1.62.1 wrangler@4.113.0
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
