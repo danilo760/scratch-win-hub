@@ -189,6 +189,8 @@ const lastStockRace = await Promise.allSettled([
 assert.equal(lastStockRace.filter((entry) => entry.status === "fulfilled").length, 1);
 assert.equal(lastStockRace.filter((entry) => entry.status === "rejected").length, 1);
 assert.match(lastStockRace.find((entry) => entry.status === "rejected").reason.message, /ESGOTADO/i);
+const aWonLastStock = lastStockRace[0].status === "fulfilled";
+const bWonLastStock = lastStockRace[1].status === "fulfilled";
 
 const { data: aVisibleRedemptions, error: aVisibleError } = await clientA
   .from("redemptions")
@@ -244,13 +246,22 @@ assert.deepEqual(
   "Cancellation did not restore stock exactly once",
 );
 
-const { data: profileA, error: profileAError } = await service
+const { data: profileRows, error: profileRowsError } = await service
   .from("profiles")
-  .select("points")
-  .eq("id", userA.id)
-  .single();
-assert.ifError(profileAError);
-assert.equal(profileA.points, 995, "User A points do not match retry + limit + single refund contract");
+  .select("id,points")
+  .in("id", [userA.id, userB.id]);
+assert.ifError(profileRowsError);
+const pointsByUser = new Map(profileRows.map((row) => [row.id, row.points]));
+assert.equal(
+  pointsByUser.get(userA.id),
+  995 - (aWonLastStock ? 7 : 0),
+  "User A points do not match retry + limit + last-stock + refund contract",
+);
+assert.equal(
+  pointsByUser.get(userB.id),
+  1000 - (bWonLastStock ? 7 : 0),
+  "User B points do not match last-stock contract",
+);
 
 const { data: limitStock, error: limitStockError } = await service
   .from("store_items")
