@@ -36,7 +36,14 @@ export function GameTab() {
 
   const play = async (id: string, title: string) => {
     setPlayingId(id);
-    const { data, error } = await supabase.rpc("play_scratchcard", { card_id: id });
+    const { data, error } = await supabase.rpc(
+      "play_scratchcard_v1" as never,
+      {
+        p_card_id: id,
+        p_client_request_id: crypto.randomUUID(),
+        p_source: "web",
+      } as never,
+    );
     setPlayingId(null);
     if (error) {
       toast.error(error.message);
@@ -75,7 +82,9 @@ export function GameTab() {
   }
 
   if (!cards?.length) {
-    return <p className="py-16 text-center text-muted-foreground">Nenhuma raspadinha disponível.</p>;
+    return (
+      <p className="py-16 text-center text-muted-foreground">Nenhuma raspadinha disponível.</p>
+    );
   }
 
   return (
@@ -90,7 +99,9 @@ export function GameTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-black text-success">{formatBRL(Number(card.price))}</span>
+              <span className="text-2xl font-black text-success">
+                {formatBRL(Number(card.price))}
+              </span>
               <Badge variant="secondary" className="gap-1">
                 <Coins className="size-3.5 text-accent" />+{card.points_reward} pts
               </Badge>
