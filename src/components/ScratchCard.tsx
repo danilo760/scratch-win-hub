@@ -15,7 +15,7 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }:
   const drawing = useRef(false);
   const [revealed, setRevealed] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
-  const won = prize > 0;
+  const won = prize > 0 || pointsEarned > 0;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -94,7 +94,7 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }:
             aria-hidden
             className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
           >
-            {[...Array(rarity === "diamante" ? 16 : prize > 0 ? 8 : 0)].map((_, i) => (
+            {[...Array(rarity === "diamante" ? 16 : 8)].map((_, i) => (
               <span
                 key={i}
                 className="absolute size-2 rounded-full bg-white/80 motion-safe:animate-ping"
@@ -117,8 +117,18 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }:
           {won ? (
             <>
               <Sparkles className="size-7" />
-              <span className="text-3xl font-black">{formatBRL(prize)}</span>
-              <span className="text-xs font-medium opacity-90">Você ganhou!</span>
+              {prize > 0 ? (
+                <span className="text-3xl font-black">{formatBRL(prize)}</span>
+              ) : (
+                <span className="text-3xl font-black">+{pointsEarned} pontos</span>
+              )}
+              <span className="text-xs font-medium opacity-90">
+                {prize > 0 && pointsEarned > 0
+                  ? `Você ganhou também +${pointsEarned} pontos!`
+                  : prize > 0
+                    ? "Você ganhou créditos!"
+                    : "Você ganhou pontos!"}
+              </span>
             </>
           ) : (
             <>
@@ -127,9 +137,11 @@ export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }:
               <span className="text-xs font-medium opacity-90">Tente novamente</span>
             </>
           )}
-          <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide opacity-90">
-            +{pointsEarned} pontos
-          </span>
+          {prize > 0 && pointsEarned > 0 && (
+            <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide opacity-90">
+              +{pointsEarned} pontos
+            </span>
+          )}
         </div>
         <canvas
           ref={canvasRef}
