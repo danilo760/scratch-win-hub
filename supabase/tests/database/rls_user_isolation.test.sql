@@ -73,25 +73,31 @@ do $$ declare r jsonb; begin
 end $$;
 reset role;
 
-create or replace function pg_temp.assert_owner_isolation(p_label text)
+create or replace function pg_temp.assert_owner_isolation(p_label text,p_own uuid,p_other uuid)
 returns void
 language plpgsql
 as $$
-declare t text; c integer;
+declare t text; own_visible boolean; other_visible boolean;
 begin
-  select count(*) into c from public.profiles;
-  if c <> 1 then raise exception '% profile isolation failed',p_label; end if;
+  select exists(select 1 from public.profiles where id=p_own),
+         exists(select 1 from public.profiles where id=p_other)
+    into own_visible,other_visible;
+  if not own_visible then raise exception '% own profile not visible',p_label; end if;
+  if other_visible then raise exception '% can see peer profile',p_label; end if;
+
   foreach t in array array['plays','credit_ledger','points_ledger','daily_scratch_claims','mystery_openings','redemptions','xp_transactions','user_achievements']
   loop
-    execute format('select count(*) from public.%I',t) into c;
-    if c <> 1 then raise exception '% isolation failed for %',p_label,t; end if;
+    execute format('select exists(select 1 from public.%I where user_id=$1), exists(select 1 from public.%I where user_id=$2)',t,t)
+      into own_visible,other_visible using p_own,p_other;
+    if not own_visible then raise exception '% own row not visible in %',p_label,t; end if;
+    if other_visible then raise exception '% can see peer row in %',p_label,t; end if;
   end loop;
 end;
 $$;
 
 select set_config('request.jwt.claims','{"sub":"10101010-1010-4010-8010-101010101010","role":"authenticated"}',true);
 set local role authenticated;
-select pg_temp.assert_owner_isolation('A');
+select pg_temp.assert_owner_isolation('A','10101010-1010-4010-8010-101010101010','20202020-2020-4020-8020-202020202020');
 do $$ begin
   begin
     perform public.get_admin_operations_v1();
@@ -105,7 +111,7 @@ reset role;
 
 select set_config('request.jwt.claims','{"sub":"20202020-2020-4020-8020-202020202020","role":"authenticated"}',true);
 set local role authenticated;
-select pg_temp.assert_owner_isolation('B');
+select pg_temp.assert_owner_isolation('B','20202020-2020-4020-8020-202020202020','10101010-1010-4010-8010-101010101010');
 reset role;
 
 select extensions.pass('USER_A and USER_B remain isolated, public profiles respect privacy, and regular users cannot call admin RPCs');
