@@ -25,11 +25,12 @@ import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
-import { AdminInsightPanel } from "@/components/AdminInsightPanel";
-import { AdminWorkspace } from "@/components/AdminWorkspace";
 import { DailyScratchPanel, MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
+const AdminPanel = lazy(async () => ({
+  default: (await import("@/components/AdminPanel")).AdminPanel,
+}));
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -157,8 +158,13 @@ function Dashboard() {
 
           {profile?.is_admin && (
             <TabsContent value="admin" className="pt-6">
-              <AdminInsightPanel />
-              <AdminWorkspace />
+              <Suspense
+                fallback={
+                  <Loader2 className="animate-spin" aria-label="Carregando administração" />
+                }
+              >
+                <AdminPanel />
+              </Suspense>
             </TabsContent>
           )}
         </Tabs>
