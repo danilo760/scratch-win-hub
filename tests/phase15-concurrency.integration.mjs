@@ -25,7 +25,11 @@ const emailA = `phase15-a-${suffix}@example.invalid`;
 const emailB = `phase15-b-${suffix}@example.invalid`;
 
 async function createUser(email) {
-  const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true });
+  const { data, error } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
   assert.ifError(error);
   assert.ok(data.user?.id, `Auth user was not created for ${email}`);
   return data.user.id;
@@ -103,15 +107,23 @@ result = await service.from("scratch_outcomes").insert({
 });
 assert.ifError(result.error);
 
-result = await service.from("scratch_math_versions").update({ status: "PUBLISHED" }).eq("id", versionId);
+result = await service
+  .from("scratch_math_versions")
+  .update({ status: "PUBLISHED" })
+  .eq("id", versionId);
 assert.ifError(result.error);
 
 const clientA = await signedInClient(emailA);
 const clientB = await signedInClient(emailB);
 
-const { data: visibleProfiles, error: visibleProfilesError } = await clientA.from("profiles").select("id");
+const { data: visibleProfiles, error: visibleProfilesError } = await clientA
+  .from("profiles")
+  .select("id");
 assert.ifError(visibleProfilesError);
-assert.deepEqual(visibleProfiles.map((row) => row.id), [userAId]);
+assert.deepEqual(
+  visibleProfiles.map((row) => row.id),
+  [userAId],
+);
 
 const forbiddenInsert = await clientA.from("scratchcards").insert({
   title: "should-not-insert",
@@ -239,6 +251,9 @@ const { data: pointRows, error: pointRowsError } = await service
   .select("id,points")
   .in("id", [userAId, userBId]);
 assert.ifError(pointRowsError);
-assert.deepEqual(pointRows.map((row) => row.points).sort((a, b) => a - b), [90, 100]);
+assert.deepEqual(
+  pointRows.map((row) => row.points).sort((a, b) => a - b),
+  [90, 100],
+);
 
 console.log("PHASE15_CONCURRENCY_SUITE_PASSED");

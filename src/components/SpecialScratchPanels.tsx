@@ -98,7 +98,8 @@ export function DailyScratchPanel() {
           <Gift className="size-5 text-accent" /> Raspadinha diária
         </CardTitle>
         <CardDescription>
-          Uma cortesia por dia. O resultado é definido e persistido no servidor antes da revelação visual.
+          Uma cortesia por dia. O resultado é definido e persistido no servidor antes da revelação
+          visual.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

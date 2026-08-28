@@ -69,7 +69,8 @@ function parseMathConfig(value: unknown): MathConfig {
         if (!entry || typeof entry !== "object") return [];
         const card = entry as Record<string, unknown>;
         const price = numberValue(card.price);
-        if (typeof card.id !== "string" || typeof card.title !== "string" || price === null) return [];
+        if (typeof card.id !== "string" || typeof card.title !== "string" || price === null)
+          return [];
         return [{ id: card.id, title: card.title, price, active: card.active === true }];
       })
     : [];
@@ -264,7 +265,8 @@ export function MathAdminPanel() {
             >
               {data.cards.map((card) => (
                 <option key={card.id} value={card.id}>
-                  {card.title}{card.active ? "" : " (inativa)"}
+                  {card.title}
+                  {card.active ? "" : " (inativa)"}
                 </option>
               ))}
             </select>
@@ -293,7 +295,11 @@ export function MathAdminPanel() {
               ))}
             </select>
           </div>
-          <Button className="md:col-span-3" onClick={createDraft} disabled={creating || !data.cards.length}>
+          <Button
+            className="md:col-span-3"
+            onClick={createDraft}
+            disabled={creating || !data.cards.length}
+          >
             {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Criar DRAFT
           </Button>
@@ -333,8 +339,12 @@ export function MathAdminPanel() {
                 <Badge variant={selected.status === "PUBLISHED" ? "default" : "secondary"}>
                   {selected.status}
                 </Badge>
-                <Badge variant="outline">{selected.rarity_name ?? selected.rarity_slug ?? "Sem raridade"}</Badge>
-                {selected.status === "PUBLISHED" && <span className="text-xs text-muted-foreground">READ ONLY</span>}
+                <Badge variant="outline">
+                  {selected.rarity_name ?? selected.rarity_slug ?? "Sem raridade"}
+                </Badge>
+                {selected.status === "PUBLISHED" && (
+                  <span className="text-xs text-muted-foreground">READ ONLY</span>
+                )}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
@@ -364,7 +374,11 @@ export function MathAdminPanel() {
                     onClick={publish}
                     disabled={publishing || selected.outcomes.length === 0 || totalWeight <= 0}
                   >
-                    {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                    {publishing ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Send className="size-4" />
+                    )}
                     Publicar versão
                   </Button>
                 </>
@@ -451,19 +465,60 @@ function OutcomeRow({
 
   return (
     <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-      <Input aria-label="Nome do outcome" value={name} disabled={readOnly} onChange={(e) => setName(e.target.value)} />
-      <Input aria-label="Prêmio em créditos" type="number" min="0" step="0.01" value={prize} disabled={readOnly} onChange={(e) => setPrize(e.target.value)} />
-      <Input aria-label="Pontos" type="number" min="0" step="1" value={points} disabled={readOnly} onChange={(e) => setPoints(e.target.value)} />
+      <Input
+        aria-label="Nome do outcome"
+        value={name}
+        disabled={readOnly}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <Input
+        aria-label="Prêmio em créditos"
+        type="number"
+        min="0"
+        step="0.01"
+        value={prize}
+        disabled={readOnly}
+        onChange={(e) => setPrize(e.target.value)}
+      />
+      <Input
+        aria-label="Pontos"
+        type="number"
+        min="0"
+        step="1"
+        value={points}
+        disabled={readOnly}
+        onChange={(e) => setPoints(e.target.value)}
+      />
       <div className="space-y-1">
-        <Input aria-label="Peso" type="number" min="0.0001" step="0.0001" value={weight} disabled={readOnly} onChange={(e) => setWeight(e.target.value)} />
+        <Input
+          aria-label="Peso"
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          value={weight}
+          disabled={readOnly}
+          onChange={(e) => setWeight(e.target.value)}
+        />
         <p className="text-center text-[11px] text-muted-foreground">{probability.toFixed(4)}%</p>
       </div>
       {!readOnly && (
         <div className="flex gap-1">
-          <Button size="icon" variant="outline" disabled={busy} onClick={save} aria-label="Salvar outcome">
+          <Button
+            size="icon"
+            variant="outline"
+            disabled={busy}
+            onClick={save}
+            aria-label="Salvar outcome"
+          >
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           </Button>
-          <Button size="icon" variant="destructive" disabled={busy} onClick={remove} aria-label="Remover outcome">
+          <Button
+            size="icon"
+            variant="destructive"
+            disabled={busy}
+            onClick={remove}
+            aria-label="Remover outcome"
+          >
             <Trash2 className="size-4" />
           </Button>
         </div>
@@ -472,7 +527,13 @@ function OutcomeRow({
   );
 }
 
-function NewOutcome({ versionId, onChanged }: { versionId: string; onChanged: () => Promise<unknown> | void }) {
+function NewOutcome({
+  versionId,
+  onChanged,
+}: {
+  versionId: string;
+  onChanged: () => Promise<unknown> | void;
+}) {
   const [name, setName] = useState("");
   const [prize, setPrize] = useState("0");
   const [points, setPoints] = useState("0");
@@ -519,10 +580,36 @@ function NewOutcome({ versionId, onChanged }: { versionId: string; onChanged: ()
       </CardHeader>
       <CardContent className="grid gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
         <Input placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input type="number" min="0" step="0.01" placeholder="Prêmio" value={prize} onChange={(e) => setPrize(e.target.value)} />
-        <Input type="number" min="0" step="1" placeholder="Pontos" value={points} onChange={(e) => setPoints(e.target.value)} />
-        <Input type="number" min="0.0001" step="0.0001" placeholder="Peso" value={weight} onChange={(e) => setWeight(e.target.value)} />
-        <Button size="icon" disabled={busy || !canSave} onClick={add} aria-label="Adicionar outcome">
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Prêmio"
+          value={prize}
+          onChange={(e) => setPrize(e.target.value)}
+        />
+        <Input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Pontos"
+          value={points}
+          onChange={(e) => setPoints(e.target.value)}
+        />
+        <Input
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          placeholder="Peso"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+        />
+        <Button
+          size="icon"
+          disabled={busy || !canSave}
+          onClick={add}
+          aria-label="Adicionar outcome"
+        >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
         </Button>
       </CardContent>

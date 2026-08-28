@@ -24,7 +24,11 @@ const password = `Store-${randomUUID()}-Aa1!`;
 
 async function createUser(prefix) {
   const email = `${prefix}-${suffix}@example.invalid`;
-  const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true });
+  const { data, error } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
   assert.ifError(error);
   assert.ok(data.user?.id, `User ${prefix} was not created`);
   return { id: data.user.id, email };
@@ -156,7 +160,11 @@ const retryResults = await Promise.all(
     }),
   ),
 );
-assert.equal(new Set(retryResults.map((row) => row.id)).size, 1, "Retry returned multiple redemptions");
+assert.equal(
+  new Set(retryResults.map((row) => row.id)).size,
+  1,
+  "Retry returned multiple redemptions",
+);
 assert.equal(retryResults.filter((row) => row.idempotent === false).length, 1);
 assert.equal(retryResults.filter((row) => row.idempotent === true).length, 19);
 const retryRedemptionId = retryResults[0].id;
@@ -188,7 +196,10 @@ const lastStockRace = await Promise.allSettled([
 ]);
 assert.equal(lastStockRace.filter((entry) => entry.status === "fulfilled").length, 1);
 assert.equal(lastStockRace.filter((entry) => entry.status === "rejected").length, 1);
-assert.match(lastStockRace.find((entry) => entry.status === "rejected").reason.message, /ESGOTADO/i);
+assert.match(
+  lastStockRace.find((entry) => entry.status === "rejected").reason.message,
+  /ESGOTADO/i,
+);
 const aWonLastStock = lastStockRace[0].status === "fulfilled";
 const bWonLastStock = lastStockRace[1].status === "fulfilled";
 
@@ -197,10 +208,16 @@ const { data: aVisibleRedemptions, error: aVisibleError } = await clientA
   .select("id,user_id,item_title_snapshot,item_id,status");
 assert.ifError(aVisibleError);
 assert.ok(aVisibleRedemptions.length >= 2);
-assert.ok(aVisibleRedemptions.every((row) => row.user_id === userA.id), "RLS leaked another user's redemption");
+assert.ok(
+  aVisibleRedemptions.every((row) => row.user_id === userA.id),
+  "RLS leaked another user's redemption",
+);
 
 const originalTitle = retryResults[0].item_title;
-result = await service.from("store_items").update({ title: `Renamed ${suffix}` }).eq("id", retryItem);
+result = await service
+  .from("store_items")
+  .update({ title: `Renamed ${suffix}` })
+  .eq("id", retryItem);
 assert.ifError(result.error);
 const { data: snapshotRow, error: snapshotError } = await clientA
   .from("redemptions")
@@ -208,7 +225,11 @@ const { data: snapshotRow, error: snapshotError } = await clientA
   .eq("id", retryRedemptionId)
   .single();
 assert.ifError(snapshotError);
-assert.equal(snapshotRow.item_title_snapshot, originalTitle, "Historical item title changed after rename");
+assert.equal(
+  snapshotRow.item_title_snapshot,
+  originalTitle,
+  "Historical item title changed after rename",
+);
 
 const deleteAttempt = await service.from("store_items").delete().eq("id", retryItem);
 assert.ok(deleteAttempt.error, "Store item with redemption history was deleted");
@@ -269,7 +290,11 @@ const { data: limitStock, error: limitStockError } = await service
   .eq("id", limitItem)
   .single();
 assert.ifError(limitStockError);
-assert.equal(limitStock.stock_available, 19, "Per-user limit race consumed more than one stock unit");
+assert.equal(
+  limitStock.stock_available,
+  19,
+  "Per-user limit race consumed more than one stock unit",
+);
 
 const { data: lastStock, error: lastStockError } = await service
   .from("store_items")

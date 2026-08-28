@@ -118,10 +118,7 @@ result = await service.from("mystery_version_entries").insert([
 ]);
 assert.ifError(result.error);
 
-result = await service
-  .from("mystery_versions")
-  .update({ status: "PUBLISHED" })
-  .eq("id", mysteryId);
+result = await service.from("mystery_versions").update({ status: "PUBLISHED" }).eq("id", mysteryId);
 assert.ifError(result.error);
 
 const forbiddenDirectMutation = await client.from("mystery_versions").insert({

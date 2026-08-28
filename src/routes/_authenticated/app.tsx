@@ -183,7 +183,8 @@ function parseMyRewards(value: unknown): MyReward[] {
   return value.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const raw = entry as Record<string, unknown>;
-    const points = typeof raw.points_spent === "number" ? raw.points_spent : Number(raw.points_spent);
+    const points =
+      typeof raw.points_spent === "number" ? raw.points_spent : Number(raw.points_spent);
     if (
       typeof raw.id !== "string" ||
       typeof raw.status !== "string" ||
@@ -193,22 +194,28 @@ function parseMyRewards(value: unknown): MyReward[] {
     ) {
       return [];
     }
-    return [{
-      id: raw.id,
-      points_spent: points,
-      status: raw.status,
-      protocol: typeof raw.protocol === "string" ? raw.protocol : null,
-      fulfillment_code: typeof raw.fulfillment_code === "string" ? raw.fulfillment_code : null,
-      created_at: raw.created_at,
-      item_title_snapshot: raw.item_title_snapshot,
-      item_image_url_snapshot:
-        typeof raw.item_image_url_snapshot === "string" ? raw.item_image_url_snapshot : null,
-    }];
+    return [
+      {
+        id: raw.id,
+        points_spent: points,
+        status: raw.status,
+        protocol: typeof raw.protocol === "string" ? raw.protocol : null,
+        fulfillment_code: typeof raw.fulfillment_code === "string" ? raw.fulfillment_code : null,
+        created_at: raw.created_at,
+        item_title_snapshot: raw.item_title_snapshot,
+        item_image_url_snapshot:
+          typeof raw.item_image_url_snapshot === "string" ? raw.item_image_url_snapshot : null,
+      },
+    ];
   });
 }
 
 function MyRewards() {
-  const { data, isLoading, error: rewardsError } = useQuery({
+  const {
+    data,
+    isLoading,
+    error: rewardsError,
+  } = useQuery({
     queryKey: ["my-rewards"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -309,7 +316,10 @@ function ProfilePreferences() {
 
   if (isLoading || !value) return <Loader2 className="animate-spin" />;
 
-  const update = <K extends keyof ProfilePreferencesForm>(key: K, next: ProfilePreferencesForm[K]) => {
+  const update = <K extends keyof ProfilePreferencesForm>(
+    key: K,
+    next: ProfilePreferencesForm[K],
+  ) => {
     setForm({ ...value, [key]: next });
   };
 

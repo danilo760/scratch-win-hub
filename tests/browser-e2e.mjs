@@ -121,9 +121,17 @@ async function exercisePublicViewports(page) {
   }
 
   await page.goto(`${baseUrl}/transparencia`);
-  await page.getByRole("heading", { name: "Centro de Transparência" }).waitFor({ state: "visible" });
-  await page.getByText("Campanhas publicadas", { exact: true }).first().waitFor({ state: "visible" });
-  await page.getByText("Probabilidade configurada", { exact: true }).first().waitFor({ state: "visible" });
+  await page
+    .getByRole("heading", { name: "Centro de Transparência" })
+    .waitFor({ state: "visible" });
+  await page
+    .getByText("Campanhas publicadas", { exact: true })
+    .first()
+    .waitFor({ state: "visible" });
+  await page
+    .getByText("Probabilidade configurada", { exact: true })
+    .first()
+    .waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "transparency page");
   await assertNoHorizontalOverflow(page, "transparency page");
   await page.screenshot({ path: `${artifactDir}/transparency-1440x900.png`, fullPage: true });
@@ -160,9 +168,15 @@ async function exerciseScratchAndStore(page) {
   await page.getByRole("tab", { name: "Loja" }).click();
   await page.getByText("Camiseta Exclusiva", { exact: true }).waitFor({ state: "visible" });
   const redeemButton = page.getByRole("button", { name: "Resgatar Item" }).first();
-  assert.equal(await redeemButton.isEnabled(), true, "seeded store item must be redeemable by the fixture user");
+  assert.equal(
+    await redeemButton.isEnabled(),
+    true,
+    "seeded store item must be redeemable by the fixture user",
+  );
   await redeemButton.click();
-  await page.getByText(/Prêmio solicitado! Protocolo:/).waitFor({ state: "visible", timeout: 10_000 });
+  await page
+    .getByText(/Prêmio solicitado! Protocolo:/)
+    .waitFor({ state: "visible", timeout: 10_000 });
 
   await page.getByRole("tab", { name: "Prêmios" }).click();
   await page.getByText("Meus Prêmios", { exact: true }).first().waitFor({ state: "visible" });
@@ -180,11 +194,18 @@ async function exerciseProfile(page) {
   await page.reload();
   await page.getByRole("tab", { name: "Perfil" }).click();
   await page.getByText("Perfil público", { exact: true }).first().waitFor({ state: "visible" });
-  assert.equal(await page.locator("input").first().inputValue(), "Browser QA", "profile preference did not persist");
+  assert.equal(
+    await page.locator("input").first().inputValue(),
+    "Browser QA",
+    "profile preference did not persist",
+  );
 }
 
 async function exerciseAdmin(page, userId) {
-  const { error: promoteError } = await admin.from("profiles").update({ is_admin: true }).eq("id", userId);
+  const { error: promoteError } = await admin
+    .from("profiles")
+    .update({ is_admin: true })
+    .eq("id", userId);
   if (promoteError) throw promoteError;
 
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -193,20 +214,31 @@ async function exerciseAdmin(page, userId) {
   await adminTab.waitFor({ state: "visible" });
   await adminTab.click();
 
-  await page.getByRole("heading", { name: "Indicadores operacionais" }).waitFor({ state: "visible" });
-  await page.getByText(/America\/Sao_Paulo/).first().waitFor({ state: "visible" });
+  await page
+    .getByRole("heading", { name: "Indicadores operacionais" })
+    .waitFor({ state: "visible" });
+  await page
+    .getByText(/America\/Sao_Paulo/)
+    .first()
+    .waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "admin operations");
   await assertNoHorizontalOverflow(page, "admin operations");
   await page.screenshot({ path: `${artifactDir}/admin-operations-1440x900.png`, fullPage: true });
 
   await page.getByRole("tab", { name: "Auditoria Matemática", exact: true }).click();
-  await page.getByText("Configurado × observado", { exact: true }).first().waitFor({ state: "visible" });
+  await page
+    .getByText("Configurado × observado", { exact: true })
+    .first()
+    .waitFor({ state: "visible" });
   await page.locator("select").first().waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "admin math audit");
   await assertNoHorizontalOverflow(page, "admin math audit");
   await page.screenshot({ path: `${artifactDir}/admin-math-audit-1440x900.png`, fullPage: true });
 
-  const { error: demoteError } = await admin.from("profiles").update({ is_admin: false }).eq("id", userId);
+  const { error: demoteError } = await admin
+    .from("profiles")
+    .update({ is_admin: false })
+    .eq("id", userId);
   if (demoteError) throw demoteError;
 }
 
@@ -241,7 +273,9 @@ async function exerciseTouchScratch(browser, email, password) {
     }
 
     await revealButton.waitFor({ state: "hidden", timeout: 10_000 });
-    await page.getByRole("button", { name: "Jogar Novamente" }).waitFor({ state: "visible", timeout: 10_000 });
+    await page
+      .getByRole("button", { name: "Jogar Novamente" })
+      .waitFor({ state: "visible", timeout: 10_000 });
     assert.equal(
       await revealButton.isVisible(),
       false,
@@ -286,7 +320,8 @@ try {
     email,
     password,
   });
-  if (authCheckError) throw new Error(`Local publishable-key password sign-in failed: ${authCheckError.message}`);
+  if (authCheckError)
+    throw new Error(`Local publishable-key password sign-in failed: ${authCheckError.message}`);
   assert.equal(authCheck.user?.id, userId, "publishable-key auth returned the wrong local user");
   await publicAuth.auth.signOut();
 

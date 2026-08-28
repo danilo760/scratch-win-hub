@@ -79,8 +79,13 @@ try {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${baseUrl}/transparencia`);
-    await page.getByRole("heading", { name: "Centro de Transparência" }).waitFor({ state: "visible" });
-    await page.getByText("Probabilidade configurada", { exact: true }).first().waitFor({ state: "visible" });
+    await page
+      .getByRole("heading", { name: "Centro de Transparência" })
+      .waitFor({ state: "visible" });
+    await page
+      .getByText("Probabilidade configurada", { exact: true })
+      .first()
+      .waitFor({ state: "visible" });
     await assertHydration("public-transparency");
 
     await login(page, email, password);
@@ -96,7 +101,10 @@ try {
     await page.getByRole("tab", { name: "Início" }).waitFor({ state: "visible" });
     await assertHydration("authenticated-app-profile-reload");
 
-    const { error: promoteError } = await admin.from("profiles").update({ is_admin: true }).eq("id", userId);
+    const { error: promoteError } = await admin
+      .from("profiles")
+      .update({ is_admin: true })
+      .eq("id", userId);
     if (promoteError) throw promoteError;
 
     await page.reload();

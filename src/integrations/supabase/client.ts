@@ -2,10 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
-import {
-  SUPABASE_PUBLIC_PUBLISHABLE_KEY,
-  SUPABASE_PUBLIC_URL,
-} from "./public-config";
+import { SUPABASE_PUBLIC_PUBLISHABLE_KEY, SUPABASE_PUBLIC_URL } from "./public-config";
 
 function createSupabaseClient() {
   // VITE_* values override the public fallback in public-config.ts.

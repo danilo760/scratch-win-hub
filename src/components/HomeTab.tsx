@@ -101,11 +101,7 @@ export function HomeTab({ onNavigate }: Props) {
           {!specialLoading &&
             !specialStatus?.daily_claimed_today &&
             !specialStatus?.daily_configured && <Badge variant="secondary">Em breve</Badge>}
-          <Button
-            className="w-full"
-            disabled={!canOpenDaily}
-            onClick={() => onNavigate("daily")}
-          >
+          <Button className="w-full" disabled={!canOpenDaily} onClick={() => onNavigate("daily")}>
             {dailyButtonLabel}
           </Button>
         </CardContent>

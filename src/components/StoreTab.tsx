@@ -54,7 +54,11 @@ export function StoreTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const pendingRequestIds = useRef(new Map<string, string>());
 
-  const { data: items, isLoading, error: storeError } = useQuery({
+  const {
+    data: items,
+    isLoading,
+    error: storeError,
+  } = useQuery({
     queryKey: ["store_items"],
     queryFn: async () => {
       const [itemsResult, redemptionsResult] = await Promise.all([
