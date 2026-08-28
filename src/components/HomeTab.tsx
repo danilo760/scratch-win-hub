@@ -54,6 +54,22 @@ export function HomeTab({ onNavigate }: Props) {
     },
   });
 
+  const dailyDescription = specialStatus?.daily_claimed_today
+    ? "Sua cortesia de hoje já foi utilizada. Você ainda pode consultar o resultado do dia."
+    : specialStatus?.daily_available
+      ? "Uma cortesia por dia, escolhida e validada diretamente no servidor."
+      : "Configuração pendente. A cortesia diária ficará disponível quando for publicada.";
+
+  const dailyButtonLabel = specialStatus?.daily_claimed_today
+    ? "Ver resultado de hoje"
+    : specialStatus?.daily_available
+      ? "Ver raspadinha diária"
+      : "Em breve";
+
+  const canOpenDaily =
+    !specialLoading &&
+    Boolean(specialStatus?.daily_available || specialStatus?.daily_claimed_today);
+
   return (
     <div className="space-y-6 pb-6">
       <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-card to-primary/10">
@@ -76,22 +92,21 @@ export function HomeTab({ onNavigate }: Props) {
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-accent" /> Raspadinha diária
           </CardTitle>
-          <CardDescription>
-            {specialStatus?.daily_available
-              ? "Uma cortesia por dia, escolhida e validada diretamente no servidor."
-              : "Configuração pendente. A cortesia diária ficará disponível quando for publicada."}
-          </CardDescription>
+          <CardDescription>{dailyDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {!specialLoading && !specialStatus?.daily_available && (
-            <Badge variant="secondary">Em breve</Badge>
+          {!specialLoading && specialStatus?.daily_claimed_today && (
+            <Badge variant="secondary">Já utilizada hoje</Badge>
           )}
+          {!specialLoading &&
+            !specialStatus?.daily_claimed_today &&
+            !specialStatus?.daily_configured && <Badge variant="secondary">Em breve</Badge>}
           <Button
             className="w-full"
-            disabled={specialLoading || !specialStatus?.daily_available}
+            disabled={!canOpenDaily}
             onClick={() => onNavigate("daily")}
           >
-            {specialStatus?.daily_available ? "Ver raspadinha diária" : "Em breve"}
+            {dailyButtonLabel}
           </Button>
         </CardContent>
       </Card>
