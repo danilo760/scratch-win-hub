@@ -165,11 +165,7 @@ export function MathAdminPanel() {
       return parseMathConfig(data);
     },
   });
-  const {
-    data = { cards: [], rarities: [], versions: [] },
-    isLoading,
-    error,
-  } = mathQuery;
+  const { data = { cards: [], rarities: [], versions: [] }, isLoading, error } = mathQuery;
 
   useEffect(() => {
     if (!cardId && data.cards[0]) setCardId(data.cards[0].id);
