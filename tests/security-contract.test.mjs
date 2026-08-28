@@ -16,6 +16,31 @@ test("frontend never contains a service role key or client-side result RNG", asy
   );
 });
 
+test("Lovable browser bootstrap has a safe Supabase fallback without server secrets", async () => {
+  const [config, client] = await Promise.all([
+    read("src/integrations/supabase/public-config.ts"),
+    read("src/integrations/supabase/client.ts"),
+  ]);
+
+  assert.match(config, /VITE_SUPABASE_URL/);
+  assert.match(config, /VITE_SUPABASE_PUBLISHABLE_KEY/);
+  assert.match(config, /https:\/\/[a-z0-9]+\.supabase\.co/);
+  assert.match(config, /sb_publishable_/);
+  assert.doesNotMatch(config, /SUPABASE_SERVICE_ROLE|service_role|sb_secret_/);
+  assert.doesNotMatch(client, /process\.env\[['"]SUPABASE_(?:URL|PUBLISHABLE_KEY)['"]\]/);
+});
+
+test("Supabase bearer token attacher is registered globally for server functions", async () => {
+  const [start, attacher] = await Promise.all([
+    read("src/start.ts"),
+    read("src/integrations/supabase/auth-attacher.ts"),
+  ]);
+
+  assert.match(start, /import\s*\{\s*attachSupabaseAuth\s*\}/);
+  assert.match(start, /functionMiddleware:\s*\[attachSupabaseAuth\]/);
+  assert.match(attacher, /Authorization:\s*`Bearer \$\{token\}`/);
+});
+
 test("scratch play, redemption and daily claim are idempotent in database migrations", async () => {
   const [math, store, daily] = await Promise.all([
     read("supabase/migrations/20260828053538_scratch_math_engine_v1_retry.sql"),
