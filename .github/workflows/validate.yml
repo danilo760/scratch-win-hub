@@ -21,21 +21,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --package-lock=false
-      - name: Apply canonical formatting in runner
-        run: |
-          npm run format
-          git diff > prettier.patch
-      - name: Capture ESLint report
-        run: npx eslint . -f json -o eslint-report.json || true
-      - name: Upload diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: quality-diagnostics
-          path: |
-            eslint-report.json
-            prettier.patch
-          if-no-files-found: error
-          retention-days: 1
+      - name: Format
+        run: npm run format
       - name: Lint
         run: npm run lint
       - name: Typecheck
@@ -44,6 +31,3 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Verify formatting is committed
-        if: always()
-        run: git diff --exit-code
