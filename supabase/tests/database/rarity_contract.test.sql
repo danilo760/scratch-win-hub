@@ -33,19 +33,26 @@ set local role authenticated;
 do $$
 declare
   draft_id uuid;
+  cfg jsonb;
+  valid_draft boolean;
 begin
   draft_id := public.create_math_draft_v1(
     '22222222-3333-4222-8222-333333333333',
     'Valid Ouro Draft',
     'ouro'
   );
-  if not exists(
+
+  cfg := public.get_admin_math_config_v1();
+  select exists(
     select 1
-    from public.scratch_math_versions v
-    join public.scratch_rarities r on r.id=v.rarity_id
-    where v.id=draft_id and v.status='DRAFT' and r.slug='ouro'
-  ) then
-    raise exception 'valid ouro draft was not created correctly';
+    from jsonb_array_elements(cfg->'versions') v
+    where v->>'id'=draft_id::text
+      and v->>'status'='DRAFT'
+      and v->>'rarity_slug'='ouro'
+  ) into valid_draft;
+
+  if not valid_draft then
+    raise exception 'valid ouro draft was not returned correctly by admin math RPC';
   end if;
 
   begin
@@ -65,6 +72,6 @@ end $$;
 
 reset role;
 
-select extensions.pass('rarity contract uses only bronze/prata/ouro/diamante and admin draft creation rejects English aliases');
+select extensions.pass('rarity contract uses only bronze/prata/ouro/diamante and admin draft creation rejects English aliases through the real RPC surface');
 select * from extensions.finish();
 rollback;
