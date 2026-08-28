@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
   Coins,
   Dices,
@@ -25,7 +25,8 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
-import { StoreTab } from "@/components/StoreTab";
+import { HomeTab } from "@/components/HomeTab";
+const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -117,32 +118,38 @@ function Dashboard() {
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="home" className="flex-1 gap-1.5">
-              <Trophy className="size-4" /> Sorteios
+          <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto p-1">
+            <TabsTrigger value="home" className="shrink-0 gap-1.5">
+              <Trophy className="size-4" /> Início
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="flex-1 gap-1.5">
+            <TabsTrigger value="scratch" className="shrink-0 gap-1.5">
+              <Sparkles className="size-4" /> Raspadinhas
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="shrink-0 gap-1.5">
               <Ticket className="size-4" /> Meus bilhetes
             </TabsTrigger>
-            <TabsTrigger value="wallet" className="flex-1 gap-1.5">
+            <TabsTrigger value="wallet" className="shrink-0 gap-1.5">
               <Wallet className="size-4" /> Carteira
             </TabsTrigger>
-            <TabsTrigger value="store" className="flex-1 gap-1.5">
+            <TabsTrigger value="store" className="shrink-0 gap-1.5">
               <ShoppingBag className="size-4" /> Loja
             </TabsTrigger>
-            <TabsTrigger value="rewards" className="flex-1 gap-1.5">
+            <TabsTrigger value="rewards" className="shrink-0 gap-1.5">
               <Gift className="size-4" /> Prêmios
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex-1 gap-1.5">
+            <TabsTrigger value="profile" className="shrink-0 gap-1.5">
               <UserCircle className="size-4" /> Perfil
             </TabsTrigger>
             {profile?.is_admin && (
-              <TabsTrigger value="admin" className="flex-1 gap-1.5">
+              <TabsTrigger value="admin" className="shrink-0 gap-1.5">
                 <Settings className="size-4" /> Admin
               </TabsTrigger>
             )}
           </TabsList>
           <TabsContent value="home" className="pt-6">
+            <HomeTab onNavigate={setTab} />
+          </TabsContent>
+          <TabsContent value="scratch" className="pt-6">
             <div className="mb-6">
               <h1 className="text-3xl font-black">Escolha seu próximo prêmio</h1>
               <p className="text-muted-foreground">
@@ -193,6 +200,12 @@ function Dashboard() {
               </div>
             )}
           </TabsContent>
+          <TabsContent value="daily" className="pt-6">
+            <DailyScratchPanel />
+          </TabsContent>
+          <TabsContent value="mystery" className="pt-6">
+            <MysteryScratchPanel />
+          </TabsContent>
           <TabsContent value="tickets" className="pt-6">
             <Card>
               <CardHeader>
@@ -208,7 +221,9 @@ function Dashboard() {
             <WalletPanel />
           </TabsContent>
           <TabsContent value="store" className="pt-6">
-            <StoreTab />
+            <Suspense fallback={<Loader2 className="animate-spin" />}>
+              <StoreTab />
+            </Suspense>
           </TabsContent>
           <TabsContent value="rewards" className="pt-6">
             <MyRewards />
@@ -224,6 +239,89 @@ function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+function DailyScratchPanel() {
+  const { data: cards = [] } = useQuery({
+    queryKey: ["daily-cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("scratchcards")
+        .select("id,title")
+        .eq("active", true)
+        .eq("is_daily_eligible", true)
+        .limit(1);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [busy, setBusy] = useState(false);
+  const claim = async () => {
+    if (!cards[0]) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc(
+      "claim_daily_scratch_v1" as never,
+      { p_card_id: cards[0].id, p_client_request_id: crypto.randomUUID() } as never,
+    );
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else
+      toast.success(
+        (data as { already_claimed?: boolean }).already_claimed
+          ? "Sua cortesia de hoje já foi usada."
+          : "Cortesia diária registrada!",
+      );
+  };
+  return (
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>🎁 Raspadinha diária</CardTitle>
+        <CardDescription>
+          O limite é calculado no servidor pelo horário de Brasília.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {cards[0] ? (
+          <Button className="w-full" disabled={busy} onClick={claim}>
+            {busy ? <Loader2 className="animate-spin" /> : "Resgatar cortesia"}
+          </Button>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Próxima raspadinha diária será disponibilizada pelo administrador.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MysteryScratchPanel() {
+  const [busy, setBusy] = useState(false);
+  const open = async () => {
+    setBusy(true);
+    const { data, error } = await supabase.rpc(
+      "open_mystery_scratch_v1" as never,
+      { p_client_request_id: crypto.randomUUID() } as never,
+    );
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else toast.success("Raridade selecionada e registrada com segurança.");
+  };
+  return (
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>🎁 Raspadinha misteriosa</CardTitle>
+        <CardDescription>
+          A raridade é escolhida pelo pool publicado antes da revelação visual.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button className="w-full" variant="glow" disabled={busy} onClick={open}>
+          {busy ? <Loader2 className="animate-spin" /> : "Abrir misteriosa"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
