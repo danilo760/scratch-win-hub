@@ -550,7 +550,7 @@ function shortId(value: string): string {
 
 export function AdminWorkspace() {
   const qc = useQueryClient();
-  const { data, isLoading, error } = useQuery({
+  const operationsQuery = useQuery({
     queryKey: adminOperationsQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_admin_operations_v1" as never);
@@ -558,6 +558,7 @@ export function AdminWorkspace() {
       return parseAdminOperations(data);
     },
   });
+  const { data, isLoading, error } = operationsQuery;
   const { data: math = { versions: [], rarities: [] } } = useQuery({
     queryKey: adminMathQueryKey,
     queryFn: async () => {
@@ -578,12 +579,15 @@ export function AdminWorkspace() {
     ]);
   };
 
-  if (isLoading || !data) return <Loader2 className="mx-auto animate-spin" />;
-  if (error) {
+  if (isLoading) return <AdminLoadingState />;
+  if (error || !data) {
     return (
       <Card>
-        <CardContent className="p-6 text-destructive">
-          Não foi possível carregar a administração.
+        <CardContent className="space-y-3 p-6 text-destructive">
+          <p role="alert">Não foi possível carregar a administração.</p>
+          <Button variant="outline" onClick={() => void operationsQuery.refetch()}>
+            Tentar novamente
+          </Button>
         </CardContent>
       </Card>
     );
@@ -655,6 +659,16 @@ export function AdminWorkspace() {
         <SimulatorPanel versions={math.versions} cards={data.scratchcards} />
       </TabsContent>
     </Tabs>
+  );
+}
+
+function AdminLoadingState() {
+  return (
+    <Card aria-busy="true">
+      <CardContent className="flex min-h-40 items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Carregando administração…
+      </CardContent>
+    </Card>
   );
 }
 

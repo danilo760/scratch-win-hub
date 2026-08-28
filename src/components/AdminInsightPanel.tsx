@@ -284,6 +284,8 @@ export function AdminInsightPanel() {
         <MathAuditPanel
           config={mathQuery.data ?? { cards: [], versions: [] }}
           loading={mathQuery.isLoading}
+          configError={mathQuery.error ? "Não foi possível carregar as versões matemáticas." : null}
+          onRetry={() => void mathQuery.refetch()}
         />
       </TabsContent>
     </Tabs>
@@ -382,7 +384,17 @@ function OperationsPanel({ query }: { query: ReturnType<typeof useQuery<AdminDas
   );
 }
 
-function MathAuditPanel({ config, loading }: { config: MathConfig; loading: boolean }) {
+function MathAuditPanel({
+  config,
+  loading,
+  configError,
+  onRetry,
+}: {
+  config: MathConfig;
+  loading: boolean;
+  configError: string | null;
+  onRetry: () => void;
+}) {
   const validVersions = useMemo(
     () => config.versions.filter((version) => version.outcomes.length > 0),
     [config.versions],
@@ -409,6 +421,20 @@ function MathAuditPanel({ config, loading }: { config: MathConfig; loading: bool
     },
   });
   if (loading) return <Loader2 className="animate-spin" />;
+  if (configError) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-6">
+          <p role="alert" className="text-destructive">
+            {configError}
+          </p>
+          <Button variant="outline" onClick={onRetry}>
+            <RefreshCw className="size-4" /> Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
   const card = selected ? config.cards.find((item) => item.id === selected.scratchcard_id) : null;
   return (
     <Card>
