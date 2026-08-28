@@ -36,23 +36,47 @@ declare
   pub jsonb;
   sim jsonb;
   audit jsonb;
+  cfg jsonb;
+  ok boolean;
 begin
   v_id := public.create_math_draft_v1('33333333-4444-4333-8333-444444444444','CRUD V1','prata');
-  if not exists(
-    select 1 from public.scratch_math_versions v join public.scratch_rarities r on r.id=v.rarity_id
-    where v.id=v_id and v.status='DRAFT' and r.slug='prata'
-  ) then raise exception 'draft was not created with selected rarity'; end if;
+  cfg := public.get_admin_math_config_v1();
+  select exists(
+    select 1
+    from jsonb_array_elements(cfg->'versions') v
+    where v->>'id'=v_id::text
+      and v->>'status'='DRAFT'
+      and v->>'rarity_slug'='prata'
+  ) into ok;
+  if not ok then raise exception 'draft was not visible through admin math RPC with selected rarity'; end if;
 
   o1 := public.add_math_outcome_v1(v_id,'Outcome A',0,10,2.5);
   o2 := public.add_math_outcome_v1(v_id,'Outcome B',1.25,0,7.5);
 
   perform public.update_math_outcome_v1(o1,'Outcome A editado',0.50,5,3.5);
-  if not exists(select 1 from public.scratch_outcomes where id=o1 and name='Outcome A editado' and prize=0.50 and points=5 and weight=3.5) then
-    raise exception 'outcome update did not persist';
-  end if;
+  cfg := public.get_admin_math_config_v1();
+  select exists(
+    select 1
+    from jsonb_array_elements(cfg->'versions') v
+    cross join lateral jsonb_array_elements(v->'outcomes') o
+    where v->>'id'=v_id::text
+      and o->>'id'=o1::text
+      and o->>'name'='Outcome A editado'
+      and (o->>'prize')::numeric=0.50
+      and (o->>'points')::int=5
+      and (o->>'weight')::numeric=3.5
+  ) into ok;
+  if not ok then raise exception 'outcome update was not visible through admin math RPC'; end if;
 
   perform public.delete_math_outcome_v1(o2);
-  if exists(select 1 from public.scratch_outcomes where id=o2) then raise exception 'outcome delete did not persist'; end if;
+  cfg := public.get_admin_math_config_v1();
+  select exists(
+    select 1
+    from jsonb_array_elements(cfg->'versions') v
+    cross join lateral jsonb_array_elements(v->'outcomes') o
+    where v->>'id'=v_id::text and o->>'id'=o2::text
+  ) into ok;
+  if ok then raise exception 'deleted outcome remained visible through admin math RPC'; end if;
 
   o2 := public.add_math_outcome_v1(v_id,'Outcome B final',0,0,6.5);
   pub := public.publish_math_version_v1(v_id);
@@ -95,6 +119,6 @@ end $$;
 
 reset role;
 
-select extensions.pass('math admin CRUD is admin-only, supports DRAFT editing, locks PUBLISHED outcomes, and exposes simulator/audit');
+select extensions.pass('math admin CRUD is admin-only, uses the admin RPC surface for DRAFT data, locks PUBLISHED outcomes, and exposes simulator/audit');
 select * from extensions.finish();
 rollback;
