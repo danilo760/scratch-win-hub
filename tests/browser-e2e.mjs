@@ -111,7 +111,11 @@ async function exercisePublicViewports(page) {
 
   await page.goto(`${baseUrl}/transparencia`);
   await page.getByRole("heading", { name: "Centro de Transparência" }).waitFor({ state: "visible" });
+  await page.getByRole("heading", { name: "Campanhas publicadas" }).waitFor({ state: "visible" });
+  await page.getByText("Probabilidade configurada", { exact: true }).first().waitFor({ state: "visible" });
+  await assertNoBlankScreen(page, "transparency page");
   await assertNoHorizontalOverflow(page, "transparency page");
+  await page.screenshot({ path: `${artifactDir}/transparency-1440x900.png`, fullPage: true });
 }
 
 async function exerciseAuthenticatedViewports(page) {
@@ -166,6 +170,33 @@ async function exerciseProfile(page) {
   await page.getByRole("tab", { name: "Perfil" }).click();
   await page.getByText("Perfil público", { exact: true }).first().waitFor({ state: "visible" });
   assert.equal(await page.locator("input").first().inputValue(), "Browser QA", "profile preference did not persist");
+}
+
+async function exerciseAdmin(page, userId) {
+  const { error: promoteError } = await admin.from("profiles").update({ is_admin: true }).eq("id", userId);
+  if (promoteError) throw promoteError;
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  const adminTab = page.getByRole("tab", { name: "Admin", exact: true });
+  await adminTab.waitFor({ state: "visible" });
+  await adminTab.click();
+
+  await page.getByRole("heading", { name: "Indicadores operacionais" }).waitFor({ state: "visible" });
+  await page.getByText(/America\/Sao_Paulo/).first().waitFor({ state: "visible" });
+  await assertNoBlankScreen(page, "admin operations");
+  await assertNoHorizontalOverflow(page, "admin operations");
+  await page.screenshot({ path: `${artifactDir}/admin-operations-1440x900.png`, fullPage: true });
+
+  await page.getByRole("tab", { name: "Auditoria Matemática", exact: true }).click();
+  await page.getByRole("heading", { name: "Configurado × observado" }).waitFor({ state: "visible" });
+  await page.locator("select").first().waitFor({ state: "visible" });
+  await assertNoBlankScreen(page, "admin math audit");
+  await assertNoHorizontalOverflow(page, "admin math audit");
+  await page.screenshot({ path: `${artifactDir}/admin-math-audit-1440x900.png`, fullPage: true });
+
+  const { error: demoteError } = await admin.from("profiles").update({ is_admin: false }).eq("id", userId);
+  if (demoteError) throw demoteError;
 }
 
 async function exerciseTouchScratch(browser, email, password) {
@@ -256,6 +287,7 @@ try {
     await exerciseAuthenticatedViewports(page);
     await exerciseScratchAndStore(page);
     await exerciseProfile(page);
+    await exerciseAdmin(page, userId);
 
     await page.getByRole("button", { name: "Sair" }).click();
     await page.waitForURL((url) => url.pathname === "/");
