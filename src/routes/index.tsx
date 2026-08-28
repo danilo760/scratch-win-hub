@@ -30,11 +30,15 @@ export const Route = createFileRoute("/")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   useEffect(() => {
+    // The form is rendered during SSR. Keep its controls disabled until React
+    // owns the page so an early click/Enter cannot fall through to native GET /?.
+    setHydrated(true);
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/app", replace: true });
     });
@@ -42,6 +46,7 @@ function AuthPage() {
 
   const handle = async (mode: "login" | "signup", e: React.FormEvent) => {
     e.preventDefault();
+    if (!hydrated || loading) return;
     setLoading(true);
     const fn =
       mode === "login"
@@ -64,6 +69,8 @@ function AuthPage() {
     toast.success("Bem-vindo!");
     navigate({ to: "/app", replace: true });
   };
+
+  const formDisabled = !hydrated || loading;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
@@ -93,7 +100,11 @@ function AuthPage() {
               </TabsList>
               {(["login", "signup"] as const).map((mode) => (
                 <TabsContent key={mode} value={mode}>
-                  <form className="space-y-4 pt-2" onSubmit={(e) => handle(mode, e)}>
+                  <form
+                    className="space-y-4 pt-2"
+                    aria-busy={formDisabled}
+                    onSubmit={(e) => handle(mode, e)}
+                  >
                     <div className="space-y-2">
                       <Label htmlFor={`${mode}-email`}>E-mail</Label>
                       <div className="relative">
@@ -102,6 +113,7 @@ function AuthPage() {
                           id={`${mode}-email`}
                           type="email"
                           required
+                          disabled={formDisabled}
                           className="pl-9"
                           placeholder="voce@email.com"
                           value={email}
@@ -118,6 +130,7 @@ function AuthPage() {
                           type="password"
                           required
                           minLength={6}
+                          disabled={formDisabled}
                           className="pl-9"
                           placeholder="••••••"
                           value={password}
@@ -125,7 +138,7 @@ function AuthPage() {
                         />
                       </div>
                     </div>
-                    <Button type="submit" variant="glow" className="w-full" disabled={loading}>
+                    <Button type="submit" variant="glow" className="w-full" disabled={formDisabled}>
                       {loading && <Loader2 className="size-4 animate-spin" />}
                       {mode === "login" ? "Entrar" : "Criar conta"}
                     </Button>
