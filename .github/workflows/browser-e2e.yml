@@ -75,12 +75,18 @@ jobs:
             echo "VITE_SUPABASE_URL=$API"
             echo "VITE_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE"
             echo "E2E_BASE_URL=http://127.0.0.1:4173"
+            echo "HOST=127.0.0.1"
+            echo "PORT=4173"
+            echo "NODE_ENV=production"
           } >> "$GITHUB_ENV"
 
-      - name: Start application
+      - name: Build production application
+        run: npm run build
+
+      - name: Start production application
         shell: bash
         run: |
-          nohup npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/browser-e2e-app.log 2>&1 &
+          nohup npm run start > /tmp/browser-e2e-app.log 2>&1 &
           echo $! > /tmp/browser-e2e-app.pid
 
           for attempt in $(seq 1 60); do
