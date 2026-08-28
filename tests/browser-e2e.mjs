@@ -214,10 +214,13 @@ async function exerciseAdmin(page, userId) {
   await adminTab.waitFor({ state: "visible" });
   await adminTab.click();
 
-  await page
+  const adminPanel = page.locator('section[aria-labelledby="admin-panel-title"]');
+  await adminPanel.waitFor({ state: "visible" });
+
+  await adminPanel
     .getByRole("heading", { name: "Indicadores operacionais" })
     .waitFor({ state: "visible" });
-  await page
+  await adminPanel
     .getByText(/America\/Sao_Paulo/)
     .first()
     .waitFor({ state: "visible" });
@@ -225,12 +228,12 @@ async function exerciseAdmin(page, userId) {
   await assertNoHorizontalOverflow(page, "admin operations");
   await page.screenshot({ path: `${artifactDir}/admin-operations-1440x900.png`, fullPage: true });
 
-  await page.getByRole("tab", { name: "Auditoria Matemática", exact: true }).click();
-  await page
+  await adminPanel.getByRole("tab", { name: "Auditoria Matemática", exact: true }).click();
+  await adminPanel
     .getByText("Configurado × observado", { exact: true })
     .first()
     .waitFor({ state: "visible" });
-  await page.locator("select").first().waitFor({ state: "visible" });
+  await adminPanel.locator("select").first().waitFor({ state: "visible" });
   await assertNoBlankScreen(page, "admin math audit");
   await assertNoHorizontalOverflow(page, "admin math audit");
   await page.screenshot({ path: `${artifactDir}/admin-math-audit-1440x900.png`, fullPage: true });
@@ -253,21 +256,21 @@ async function exerciseAdmin(page, userId) {
   ];
 
   for (const [tabName, evidence] of adminSections) {
-    await page.getByRole("tab", { name: tabName, exact: true }).click();
-    await page.getByText(evidence, { exact: true }).first().waitFor({ state: "visible" });
+    await adminPanel.getByRole("tab", { name: tabName, exact: true }).click();
+    await adminPanel.getByText(evidence, { exact: true }).first().waitFor({ state: "visible" });
     await assertNoBlankScreen(page, `admin ${tabName}`);
     await assertNoHorizontalOverflow(page, `admin ${tabName}`);
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("tab", { name: "Raspadinhas", exact: true }).click();
-  await page
+  await adminPanel.getByRole("tab", { name: "Raspadinhas", exact: true }).click();
+  await adminPanel
     .getByText("Cadastros operacionais e versão publicada atual.", { exact: true })
     .first()
     .waitFor({ state: "visible" });
   await assertNoHorizontalOverflow(page, "admin mobile raspadinhas");
-  await page.getByRole("tab", { name: "Resgates", exact: true }).click();
-  await page.getByText("Resgates", { exact: true }).first().waitFor({ state: "visible" });
+  await adminPanel.getByRole("tab", { name: "Resgates", exact: true }).click();
+  await adminPanel.getByText("Resgates", { exact: true }).first().waitFor({ state: "visible" });
   await assertNoHorizontalOverflow(page, "admin mobile resgates");
   await page.screenshot({ path: `${artifactDir}/admin-mobile-390x844.png`, fullPage: true });
 
