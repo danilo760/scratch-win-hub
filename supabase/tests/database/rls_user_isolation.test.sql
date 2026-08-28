@@ -53,7 +53,9 @@ values
 ('10101010-1010-4010-8010-101010101010','70707070-7070-4070-8070-707070707070'),
 ('20202020-2020-4020-8020-202020202020','70707070-7070-4070-8070-707070707070');
 
--- Public profile RPC is intentionally anonymous, but private profiles must stay hidden.
+-- Public profile RPC is intentionally anonymous. Explicitly make A private first,
+-- because production profiles are public by default.
+update public.profiles set profile_public=false where id='10101010-1010-4010-8010-101010101010';
 set local role anon;
 do $$ declare r jsonb; begin
   r := public.get_public_profile('user-10101010101040108010101010101010');
@@ -68,25 +70,32 @@ set local role anon;
 do $$ declare r jsonb; begin
   r := public.get_public_profile('user-10101010101040108010101010101010');
   if r is null then raise exception 'public profile unavailable'; end if;
-  if r ? 'email' or r ? 'balance' or r ? 'points' or r ? 'is_admin' then
-    raise exception 'public profile leaked sensitive fields';
-  end if;
+  if r ? 'email' or r ? 'balance' or r ? 'points' or r ? 'is_admin' then raise exception 'public profile leaked sensitive fields'; end if;
   if r->>'display_name' <> 'RLS A' then raise exception 'public profile returned wrong subject'; end if;
 end $$;
 reset role;
 
+create or replace function pg_temp.assert_owner_isolation(p_label text)
+returns void
+language plpgsql
+as $$
+declare t text; c integer;
+begin
+  select count(*) into c from public.profiles;
+  if c <> 1 then raise exception '% profile isolation failed',p_label; end if;
+
+  foreach t in array array['plays','credit_ledger','points_ledger','daily_scratch_claims','mystery_openings','redemptions','xp_transactions','user_achievements']
+  loop
+    execute format('select count(*) from public.%I',t) into c;
+    if c <> 1 then raise exception '% isolation failed for %',p_label,t; end if;
+  end loop;
+end;
+$$;
+
 select set_config('request.jwt.claims','{"sub":"10101010-1010-4010-8010-101010101010","role":"authenticated"}',true);
 set local role authenticated;
+select pg_temp.assert_owner_isolation('A');
 do $$ begin
-  if (select count(*) from public.profiles) <> 1 then raise exception 'A profile isolation failed'; end if;
-  if (select count(*) from public.plays) <> 1 then raise exception 'A plays isolation failed'; end if;
-  if (select count(*) from public.credit_ledger) <> 1 then raise exception 'A credit ledger isolation failed'; end if;
-  if (select count(*) from public.points_ledger) <> 1 then raise exception 'A points ledger isolation failed'; end if;
-  if (select count(*) from public.daily_scratch_claims) <> 1 then raise exception 'A daily isolation failed'; end if;
-  if (select count(*) from public.mystery_openings) <> 1 then raise exception 'A mystery isolation failed'; end if;
-  if (select count(*) from public.redemptions) <> 1 then raise exception 'A redemptions isolation failed'; end if;
-  if (select count(*) from public.xp_transactions) <> 1 then raise exception 'A xp isolation failed'; end if;
-  if (select count(*) from public.user_achievements) <> 1 then raise exception 'A achievements isolation failed'; end if;
   begin
     perform public.get_admin_operations_v1();
     raise exception 'regular user reached admin RPC';
@@ -99,17 +108,7 @@ reset role;
 
 select set_config('request.jwt.claims','{"sub":"20202020-2020-4020-8020-202020202020","role":"authenticated"}',true);
 set local role authenticated;
-do $$ begin
-  if (select count(*) from public.profiles) <> 1 then raise exception 'B profile isolation failed'; end if;
-  if (select count(*) from public.plays) <> 1 then raise exception 'B plays isolation failed'; end if;
-  if (select count(*) from public.credit_ledger) <> 1 then raise exception 'B credit ledger isolation failed'; end if;
-  if (select count(*) from public.points_ledger) <> 1 then raise exception 'B points ledger isolation failed'; end if;
-  if (select count(*) from public.daily_scratch_claims) <> 1 then raise exception 'B daily isolation failed'; end if;
-  if (select count(*) from public.mystery_openings) <> 1 then raise exception 'B mystery isolation failed'; end if;
-  if (select count(*) from public.redemptions) <> 1 then raise exception 'B redemptions isolation failed'; end if;
-  if (select count(*) from public.xp_transactions) <> 1 then raise exception 'B xp isolation failed'; end if;
-  if (select count(*) from public.user_achievements) <> 1 then raise exception 'B achievements isolation failed'; end if;
-end $$;
+select pg_temp.assert_owner_isolation('B');
 reset role;
 
 select extensions.pass('USER_A and USER_B remain isolated, public profiles respect privacy, and regular users cannot call admin RPCs');
