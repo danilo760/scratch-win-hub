@@ -80,9 +80,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Raspadinha Online" },
-      { name: "description", content: "Raspe cartelas digitais, ganhe prêmios e resgate recompensas." },
+      {
+        name: "description",
+        content: "Raspe cartelas digitais, ganhe prêmios e resgate recompensas.",
+      },
       { property: "og:title", content: "Raspadinha Online" },
-      { property: "og:description", content: "Raspe cartelas digitais, ganhe prêmios e resgate recompensas." },
+      {
+        property: "og:description",
+        content: "Raspe cartelas digitais, ganhe prêmios e resgate recompensas.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
