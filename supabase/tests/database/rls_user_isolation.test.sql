@@ -53,10 +53,16 @@ values
 ('10101010-1010-4010-8010-101010101010','70707070-7070-4070-8070-707070707070'),
 ('20202020-2020-4020-8020-202020202020','70707070-7070-4070-8070-707070707070');
 
+select set_config(
+  'app.test_public_slug',
+  (select public_slug from public.profiles where id='10101010-1010-4010-8010-101010101010'),
+  true
+);
+
 update public.profiles set profile_public=false where id='10101010-1010-4010-8010-101010101010';
 set local role anon;
 do $$ declare r jsonb; begin
-  r := public.get_public_profile('user-10101010101040108010101010101010');
+  r := public.get_public_profile(current_setting('app.test_public_slug'));
   if r is not null then raise exception 'private profile exposed by public RPC'; end if;
 end $$;
 reset role;
@@ -66,7 +72,7 @@ set profile_public=true, show_achievements=false, show_statistics=false
 where id='10101010-1010-4010-8010-101010101010';
 set local role anon;
 do $$ declare r jsonb; begin
-  r := public.get_public_profile('user-10101010101040108010101010101010');
+  r := public.get_public_profile(current_setting('app.test_public_slug'));
   if r is null then raise exception 'public profile unavailable'; end if;
   if r ? 'email' or r ? 'balance' or r ? 'points' or r ? 'is_admin' then raise exception 'public profile leaked sensitive fields'; end if;
   if r->>'display_name' <> 'RLS A' then raise exception 'public profile returned wrong subject'; end if;
