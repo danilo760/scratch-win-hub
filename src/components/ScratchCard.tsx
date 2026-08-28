@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Frown, RotateCcw } from "lucide-react";
+import { Sparkles, Frown, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/hooks/useProfile";
 
@@ -7,12 +7,14 @@ type Props = {
   prize: number;
   pointsEarned: number;
   onReset: () => void;
+  rarity?: "bronze" | "prata" | "ouro" | "diamante";
 };
 
-export function ScratchCard({ prize, pointsEarned, onReset }: Props) {
+export function ScratchCard({ prize, pointsEarned, onReset, rarity = "bronze" }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const [revealed, setRevealed] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
   const won = prize > 0;
 
   useEffect(() => {
@@ -62,15 +64,54 @@ export function ScratchCard({ prize, pointsEarned, onReset }: Props) {
       if (data[i] === 0) cleared++;
     }
     const total = data.length / (4 * 40);
-    if (cleared / total > 0.5) setRevealed(true);
+    if (cleared / total > 0.5) {
+      setRevealed(true);
+      if (soundOn && "AudioContext" in window) {
+        const audio = new AudioContext();
+        const oscillator = audio.createOscillator();
+        oscillator.frequency.value = won ? 660 : 220;
+        oscillator.connect(audio.destination);
+        oscillator.start();
+        oscillator.stop(audio.currentTime + 0.08);
+      }
+    }
   };
+
+  const theme = {
+    bronze: "from-amber-800 via-orange-700 to-amber-900",
+    prata: "from-slate-400 via-zinc-500 to-slate-700",
+    ouro: "from-amber-300 via-yellow-500 to-amber-700",
+    diamante: "from-cyan-300 via-sky-500 to-indigo-700",
+  }[rarity];
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <div className="relative h-[150px] w-full max-w-[300px] overflow-hidden rounded-xl border border-border shadow-lg">
+      <div
+        className={`relative h-[150px] w-full max-w-[300px] overflow-hidden rounded-xl border border-border bg-gradient-to-br ${theme} shadow-lg`}
+      >
+        {revealed && won && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
+          >
+            {[...Array(rarity === "diamante" ? 16 : prize > 0 ? 8 : 0)].map((_, i) => (
+              <span
+                key={i}
+                className="absolute size-2 rounded-full bg-white/80 motion-safe:animate-ping"
+                style={{
+                  left: `${(i * 17) % 100}%`,
+                  top: `${(i * 29) % 85}%`,
+                  animationDelay: `${i * 90}ms`,
+                }}
+              />
+            ))}
+          </div>
+        )}
         <div
           className={`absolute inset-0 flex flex-col items-center justify-center gap-1 ${
-            won ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
+            won
+              ? "bg-success text-success-foreground"
+              : "bg-destructive text-destructive-foreground"
           }`}
         >
           {won ? (
@@ -111,6 +152,15 @@ export function ScratchCard({ prize, pointsEarned, onReset }: Props) {
           }}
         />
       </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setSoundOn((value) => !value)}
+        aria-pressed={soundOn}
+      >
+        {soundOn ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />} Som{" "}
+        {soundOn ? "ligado" : "desligado"}
+      </Button>
       <Button variant="outline" onClick={onReset} className="w-full max-w-[300px]">
         <RotateCcw className="size-4" /> Jogar Novamente
       </Button>
