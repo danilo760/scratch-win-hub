@@ -21,10 +21,9 @@ export function DailyScratchPanel() {
     if (!status?.daily_available || busy) return;
     setBusy(true);
     pendingRequestId.current ??= crypto.randomUUID();
-    const { data, error } = await supabase.rpc(
-      "claim_daily_scratch_v2" as never,
-      { p_client_request_id: pendingRequestId.current } as never,
-    );
+    const { data, error } = await supabase.rpc("claim_daily_scratch_v2", {
+      p_client_request_id: pendingRequestId.current,
+    });
     setBusy(false);
 
     if (error) {
@@ -97,10 +96,9 @@ export function MysteryScratchPanel() {
     if (!status?.mystery_available || busy) return;
     setBusy(true);
     pendingRequestId.current ??= crypto.randomUUID();
-    const { data, error } = await supabase.rpc(
-      "open_mystery_scratch_v1" as never,
-      { p_client_request_id: pendingRequestId.current } as never,
-    );
+    const { data, error } = await supabase.rpc("open_mystery_scratch_v1", {
+      p_client_request_id: pendingRequestId.current,
+    });
     setBusy(false);
 
     if (error) {
