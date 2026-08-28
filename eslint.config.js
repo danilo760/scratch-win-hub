@@ -36,5 +36,13 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      // shadcn UI modules intentionally colocate components with CVA variants/hooks.
+      // This only affects Vite Fast Refresh diagnostics, not runtime correctness.
+      "react-refresh/only-export-components": "off",
+    },
+  },
   eslintPluginPrettier,
 );
