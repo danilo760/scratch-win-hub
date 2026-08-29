@@ -749,6 +749,28 @@ function AdminTrigger({ value, label }: { value: string; label: string }) {
   );
 }
 
+function AdminEmptyListState({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-secondary/20 p-6 text-center">
+      <div className="flex size-11 items-center justify-center rounded-full border bg-background text-muted-foreground">
+        {icon}
+      </div>
+      <div className="max-w-md space-y-1">
+        <strong className="block text-sm">{title}</strong>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 function OverviewPanel({
   data,
   onRefresh,
@@ -1642,22 +1664,30 @@ function AchievementsPanel({ achievements }: { achievements: AchievementAdmin[] 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {achievements.map((achievement) => (
-          <div key={achievement.id} className="rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <strong>
-                {achievement.icon} {achievement.name}
-              </strong>
-              <Badge variant={achievement.active ? "secondary" : "outline"}>
-                {achievement.active ? "Ativa" : "Inativa"}
-              </Badge>
+        {achievements.length ? (
+          achievements.map((achievement) => (
+            <div key={achievement.id} className="rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <strong>
+                  {achievement.icon} {achievement.name}
+                </strong>
+                <Badge variant={achievement.active ? "secondary" : "outline"}>
+                  {achievement.active ? "Ativa" : "Inativa"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{achievement.description}</p>
+              <pre className="mt-2 overflow-x-auto rounded bg-secondary p-2 text-[11px]">
+                {JSON.stringify(achievement.criteria, null, 2)}
+              </pre>
             </div>
-            <p className="text-xs text-muted-foreground">{achievement.description}</p>
-            <pre className="mt-2 overflow-x-auto rounded bg-secondary p-2 text-[11px]">
-              {JSON.stringify(achievement.criteria, null, 2)}
-            </pre>
-          </div>
-        ))}
+          ))
+        ) : (
+          <AdminEmptyListState
+            icon={<BadgeCheck className="size-5" />}
+            title="Nenhuma conquista cadastrada"
+            description="As conquistas configuradas aparecerão aqui com seus critérios e status."
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -1673,39 +1703,47 @@ function UsersPanel({ users }: { users: UserAdmin[] }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Usuário</th>
-              <th className="p-2">Saldo</th>
-              <th className="p-2">Pontos</th>
-              <th className="p-2">XP</th>
-              <th className="p-2">Nível</th>
-              <th className="p-2">Perfil</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b">
-                <td className="p-2">
-                  <strong>{user.display_name}</strong>
-                  <span className="block text-xs text-muted-foreground">
-                    {user.email ?? shortId(user.id)}
-                  </span>
-                </td>
-                <td className="p-2">{formatBRL(user.balance)}</td>
-                <td className="p-2">{user.points}</td>
-                <td className="p-2">{user.xp}</td>
-                <td className="p-2">{user.level}</td>
-                <td className="p-2">
-                  <Badge variant={user.admin_role === "user" ? "outline" : "default"}>
-                    {adminRoleLabel[user.admin_role]}
-                  </Badge>
-                </td>
+        {users.length ? (
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="p-2">Usuário</th>
+                <th className="p-2">Saldo</th>
+                <th className="p-2">Pontos</th>
+                <th className="p-2">XP</th>
+                <th className="p-2">Nível</th>
+                <th className="p-2">Perfil</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} className="border-b">
+                  <td className="p-2">
+                    <strong>{user.display_name}</strong>
+                    <span className="block text-xs text-muted-foreground">
+                      {user.email ?? shortId(user.id)}
+                    </span>
+                  </td>
+                  <td className="p-2">{formatBRL(user.balance)}</td>
+                  <td className="p-2">{user.points}</td>
+                  <td className="p-2">{user.xp}</td>
+                  <td className="p-2">{user.level}</td>
+                  <td className="p-2">
+                    <Badge variant={user.admin_role === "user" ? "outline" : "default"}>
+                      {adminRoleLabel[user.admin_role]}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <AdminEmptyListState
+            icon={<Users className="size-5" />}
+            title="Nenhum usuário encontrado"
+            description="Os usuários disponíveis para consulta administrativa aparecerão aqui."
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -1736,20 +1774,28 @@ function LedgerTable({
         <CardDescription>Últimos 200 registros append-only.</CardDescription>
       </CardHeader>
       <CardContent className="max-h-[600px] space-y-2 overflow-auto">
-        {rows.map((row) => (
-          <div key={row.id} className="rounded border p-2 text-xs">
-            <div className="flex justify-between gap-2">
-              <strong>{row.transaction_type}</strong>
-              <span>{currency ? formatBRL(row.amount) : row.amount}</span>
+        {rows.length ? (
+          rows.map((row) => (
+            <div key={row.id} className="rounded border p-2 text-xs">
+              <div className="flex justify-between gap-2">
+                <strong>{row.transaction_type}</strong>
+                <span>{currency ? formatBRL(row.amount) : row.amount}</span>
+              </div>
+              <p className="text-muted-foreground">
+                {shortId(row.user_id)} · {row.reference_type}:{shortId(row.reference_id)}
+              </p>
+              <p>
+                {row.balance_before} → {row.balance_after}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              {shortId(row.user_id)} · {row.reference_type}:{shortId(row.reference_id)}
-            </p>
-            <p>
-              {row.balance_before} → {row.balance_after}
-            </p>
-          </div>
-        ))}
+          ))
+        ) : (
+          <AdminEmptyListState
+            icon={<ClipboardList className="size-5" />}
+            title={currency ? "Nenhum movimento de créditos" : "Nenhum movimento de pontos"}
+            description="Os registros append-only aparecerão aqui assim que houver movimentações."
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -1765,20 +1811,28 @@ function AuditPanel({ logs }: { logs: AuditAdmin[] }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="max-h-[680px] space-y-2 overflow-auto">
-        {logs.map((log) => (
-          <div key={log.id} className="rounded-lg border p-3">
-            <div className="flex flex-wrap justify-between gap-2">
-              <strong>{log.action}</strong>
-              <span className="text-xs text-muted-foreground">
-                {new Date(log.created_at).toLocaleString("pt-BR")}
-              </span>
+        {logs.length ? (
+          logs.map((log) => (
+            <div key={log.id} className="rounded-lg border p-3">
+              <div className="flex flex-wrap justify-between gap-2">
+                <strong>{log.action}</strong>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(log.created_at).toLocaleString("pt-BR")}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {log.entity_type} · {shortId(log.entity_id)} · admin{" "}
+                {log.admin_id ? shortId(log.admin_id) : "sistema"}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {log.entity_type} · {shortId(log.entity_id)} · admin{" "}
-              {log.admin_id ? shortId(log.admin_id) : "sistema"}
-            </p>
-          </div>
-        ))}
+          ))
+        ) : (
+          <AdminEmptyListState
+            icon={<Activity className="size-5" />}
+            title="Nenhum evento de auditoria"
+            description="Os eventos administrativos e transacionais auditados aparecerão aqui."
+          />
+        )}
       </CardContent>
     </Card>
   );
