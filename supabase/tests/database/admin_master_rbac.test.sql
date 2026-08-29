@@ -65,8 +65,6 @@ declare
   v_wallet jsonb;
   v_role jsonb;
   v_role_count integer;
-  v_balance numeric;
-  v_points integer;
 begin
   if not public.is_admin(auth.uid()) or not public.is_admin_master(auth.uid()) then
     raise exception 'master role not recognized';
@@ -83,6 +81,29 @@ begin
   v_wallet := public.admin_master_adjust_user_v1(
     'a1000000-0000-4000-8000-000000000001', 2.50, 15, 'RBAC test adjustment'
   );
+  if (v_wallet->>'balance')::numeric <> 12.50 or (v_wallet->>'points')::integer <> 15 then
+    raise exception 'wallet adjustment response invalid: %',v_wallet;
+  end if;
+
+  select count(*) into v_role_count from public.get_admin_user_management_v1();
+  if v_role_count < 3 then raise exception 'master user management snapshot incomplete'; end if;
+
+  begin
+    perform public.admin_set_user_role_v1('a3000000-0000-4000-8000-000000000003','admin');
+    raise exception 'last master was demoted';
+  exception when others then
+    if sqlerrm='last master was demoted' then raise; end if;
+    if position('último admin master' in sqlerrm)=0 then raise exception 'unexpected last-master denial: %',sqlerrm; end if;
+  end;
+end $$;
+reset role;
+
+-- Verify privileged writes outside end-user RLS visibility.
+do $$
+declare
+  v_balance numeric;
+  v_points integer;
+begin
   select balance,points into v_balance,v_points
   from public.profiles where id='a1000000-0000-4000-8000-000000000001';
   if v_balance <> 12.50 or v_points <> 15 then
@@ -100,19 +121,13 @@ begin
       and transaction_type='ADMIN_ADJUSTMENT'
       and amount=15
   ) then raise exception 'points adjustment was not ledgered'; end if;
-
-  select count(*) into v_role_count from public.get_admin_user_management_v1();
-  if v_role_count < 3 then raise exception 'master user management snapshot incomplete'; end if;
-
-  begin
-    perform public.admin_set_user_role_v1('a3000000-0000-4000-8000-000000000003','admin');
-    raise exception 'last master was demoted';
-  exception when others then
-    if sqlerrm='last master was demoted' then raise; end if;
-    if position('último admin master' in sqlerrm)=0 then raise exception 'unexpected last-master denial: %',sqlerrm; end if;
-  end;
+  if not exists(
+    select 1 from public.admin_audit_logs
+    where actor_id='a3000000-0000-4000-8000-000000000003'
+      and action='user.wallet_adjusted'
+      and entity_id='a1000000-0000-4000-8000-000000000001'
+  ) then raise exception 'wallet adjustment was not audited'; end if;
 end $$;
-reset role;
 
 select extensions.pass('RBAC separates normal admin from admin_master while preserving operational admin work, master configuration, audited wallet adjustments and last-master protection');
 select * from extensions.finish();
