@@ -633,12 +633,16 @@ export function AdminWorkspace() {
       <TabsContent value="overview">
         <OverviewPanel data={data} onRefresh={refresh} />
       </TabsContent>
-      <TabsContent value="scratchcards">
-        <ScratchcardsPanel cards={data.scratchcards} onChanged={refresh} />
-      </TabsContent>
-      <TabsContent value="math">
-        <MathAdminPanel />
-      </TabsContent>
+      {isMaster && (
+        <TabsContent value="scratchcards">
+          <ScratchcardsPanel cards={data.scratchcards} onChanged={refresh} />
+        </TabsContent>
+      )}
+      {isMaster && (
+        <TabsContent value="math">
+          <MathAdminPanel />
+        </TabsContent>
+      )}
       <TabsContent value="outcomes">
         {mathQuery.error ? (
           <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
