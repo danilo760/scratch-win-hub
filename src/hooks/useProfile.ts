@@ -27,10 +27,7 @@ export function useProfile() {
           .select("id, email, balance, points, is_admin")
           .eq("id", auth.user.id)
           .maybeSingle(),
-        supabase.rpc(
-          "is_admin_master" as never,
-          { _user_id: auth.user.id } as never,
-        ),
+        supabase.rpc("is_admin_master" as never, { _user_id: auth.user.id } as never),
       ]);
 
       if (error) throw error;
