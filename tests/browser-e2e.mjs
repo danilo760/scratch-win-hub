@@ -408,6 +408,22 @@ async function exerciseAdmin(page, userId) {
   await assertNoHorizontalOverflow(page, "admin master controls");
   await page.screenshot({ path: `${artifactDir}/admin-master-1440x900.png`, fullPage: true });
 
+  const masterSections = [
+    ["Raspadinhas", "Cadastros operacionais e versão publicada atual."],
+    ["Versões Matemáticas", "Versões e resultados"],
+    ["Diária", "Configuração da Diária"],
+    ["Misteriosa", "Pool e pesos"],
+  ];
+
+  for (const [tabName, evidence] of masterSections) {
+    const masterTab = adminPanel.getByRole("tab", { name: tabName, exact: true });
+    await masterTab.waitFor({ state: "visible" });
+    await masterTab.click();
+    await adminPanel.getByText(evidence, { exact: true }).first().waitFor({ state: "visible" });
+    await assertNoBlankScreen(page, `admin master ${tabName}`);
+    await assertNoHorizontalOverflow(page, `admin master ${tabName}`);
+  }
+
   const { error: demoteError } = await admin
     .from("profiles")
     .update({ admin_role: "user" })
