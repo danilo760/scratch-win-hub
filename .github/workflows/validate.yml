@@ -28,11 +28,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Format
-        shell: bash
-        run: |
-          bunx prettier --write src/components/SpecialScratchPanels.tsx
-          git diff -- src/components/SpecialScratchPanels.tsx
-          git diff --exit-code -- src/components/SpecialScratchPanels.tsx
+        run: bunx prettier --check .
       - name: Lint
         run: bun run lint
       - name: Typecheck
