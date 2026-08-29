@@ -43,55 +43,51 @@ jobs:
             raise SystemExit(f'expected one React import, found {text.count(old)}')
           text = text.replace(old, new, 1)
 
-          old = '''  const [reason, setReason] = useState("");
-          const [busy, setBusy] = useState(false);
-          '''
-          new = '''  const [reason, setReason] = useState("");
-          const [busy, setBusy] = useState(false);
-          const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
-          '''
+          old = "\n".join([
+            '  const [reason, setReason] = useState("");',
+            '  const [busy, setBusy] = useState(false);',
+          ])
+          new = old + '\n  const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);'
           if text.count(old) != 1:
             raise SystemExit(f'expected one wallet state block, found {text.count(old)}')
           text = text.replace(old, new, 1)
 
-          old = '''    setBusy(true);
-          const { error } = await supabase.rpc("admin_master_adjust_user_v1", {
-            p_user_id: userId,
-            p_balance_delta: balance,
-            p_points_delta: points,
-            p_reason: reason.trim(),
-          });
-          '''
-          new = '''    const normalizedReason = reason.trim();
-          const fingerprint = JSON.stringify({ userId, balance, points, reason: normalizedReason });
-          if (!requestRef.current || requestRef.current.fingerprint !== fingerprint) {
-            requestRef.current = { fingerprint, id: crypto.randomUUID() };
-          }
-
-          setBusy(true);
-          const { error } = await supabase.rpc("admin_master_adjust_user_v2", {
-            p_user_id: userId,
-            p_client_request_id: requestRef.current.id,
-            p_balance_delta: balance,
-            p_points_delta: points,
-            p_reason: normalizedReason,
-          });
-          '''
+          old = "\n".join([
+            '    setBusy(true);',
+            '    const { error } = await supabase.rpc("admin_master_adjust_user_v1", {',
+            '      p_user_id: userId,',
+            '      p_balance_delta: balance,',
+            '      p_points_delta: points,',
+            '      p_reason: reason.trim(),',
+            '    });',
+          ])
+          new = "\n".join([
+            '    const normalizedReason = reason.trim();',
+            '    const fingerprint = JSON.stringify({ userId, balance, points, reason: normalizedReason });',
+            '    if (!requestRef.current || requestRef.current.fingerprint !== fingerprint) {',
+            '      requestRef.current = { fingerprint, id: crypto.randomUUID() };',
+            '    }',
+            '',
+            '    setBusy(true);',
+            '    const { error } = await supabase.rpc("admin_master_adjust_user_v2", {',
+            '      p_user_id: userId,',
+            '      p_client_request_id: requestRef.current.id,',
+            '      p_balance_delta: balance,',
+            '      p_points_delta: points,',
+            '      p_reason: normalizedReason,',
+            '    });',
+          ])
           if text.count(old) != 1:
             raise SystemExit(f'expected one v1 wallet RPC call, found {text.count(old)}')
           text = text.replace(old, new, 1)
 
-          old = '''    setBalanceDelta("0");
-          setPointsDelta("0");
-          setReason("");
-          await onChanged();
-          '''
-          new = '''    requestRef.current = null;
-          setBalanceDelta("0");
-          setPointsDelta("0");
-          setReason("");
-          await onChanged();
-          '''
+          old = "\n".join([
+            '    setBalanceDelta("0");',
+            '    setPointsDelta("0");',
+            '    setReason("");',
+            '    await onChanged();',
+          ])
+          new = '    requestRef.current = null;\n' + old
           if text.count(old) != 1:
             raise SystemExit(f'expected one wallet success reset, found {text.count(old)}')
           text = text.replace(old, new, 1)
