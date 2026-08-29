@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(1);
+select extensions.plan(3);
 
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values
@@ -133,6 +133,14 @@ begin
   end if;
 end $$;
 
+select extensions.ok(
+  not has_function_privilege('authenticated', 'public.admin_master_adjust_user_v1(uuid,numeric,integer,text)', 'EXECUTE'),
+  'legacy Admin Master wallet v1 is not executable by authenticated clients'
+);
+select extensions.ok(
+  has_function_privilege('authenticated', 'public.admin_master_adjust_user_v2(uuid,uuid,numeric,integer,text)', 'EXECUTE'),
+  'idempotent Admin Master wallet v2 remains executable by authenticated clients'
+);
 select extensions.pass('Admin Master wallet v2 is master-only, payload-bound and idempotent across retries');
 select * from extensions.finish();
 rollback;
