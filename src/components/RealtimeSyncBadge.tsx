@@ -63,13 +63,9 @@ export function RealtimeSyncBadge({ userId }: Props) {
         },
         invalidateRewards,
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "store_items" },
-        () => {
-          void queryClient.invalidateQueries({ queryKey: ["store_items"] });
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_items" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["store_items"] });
+      })
       .on(
         "postgres_changes",
         {
@@ -109,12 +105,7 @@ export function RealtimeSyncBadge({ userId }: Props) {
       : status === "connecting"
         ? "Conectando atualizações em tempo real"
         : "Atualizações em tempo real indisponíveis";
-  const text =
-    status === "live"
-      ? "Ao vivo"
-      : status === "connecting"
-        ? "Conectando"
-        : "Offline";
+  const text = status === "live" ? "Ao vivo" : status === "connecting" ? "Conectando" : "Offline";
   const dotClass =
     status === "live"
       ? "bg-success"
