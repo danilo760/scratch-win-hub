@@ -1716,8 +1716,8 @@ function UsersPanel({ users }: { users: UserAdmin[] }) {
                 <td className="p-2">{user.xp}</td>
                 <td className="p-2">{user.level}</td>
                 <td className="p-2">
-                  <Badge variant={user.is_admin ? "default" : "outline"}>
-                    {user.is_admin ? "Admin" : "Usuário"}
+                  <Badge variant={user.admin_role === "user" ? "outline" : "default"}>
+                    {adminRoleLabel[user.admin_role]}
                   </Badge>
                 </td>
               </tr>
