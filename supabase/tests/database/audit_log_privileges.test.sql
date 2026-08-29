@@ -13,12 +13,16 @@ begin
     raise exception 'anon can still select public.admin_audit_logs';
   end if;
 
-  if not has_table_privilege('authenticated', 'public.audit_logs', 'SELECT') then
-    raise exception 'authenticated lost select on public.audit_logs';
+  if has_table_privilege('authenticated', 'public.audit_logs', 'SELECT') then
+    raise exception 'authenticated can still select public.audit_logs directly';
   end if;
 
-  if not has_table_privilege('authenticated', 'public.admin_audit_logs', 'SELECT') then
-    raise exception 'authenticated lost select on public.admin_audit_logs';
+  if has_table_privilege('authenticated', 'public.admin_audit_logs', 'SELECT') then
+    raise exception 'authenticated can still select public.admin_audit_logs directly';
+  end if;
+
+  if not has_function_privilege('authenticated', 'public.get_admin_operations_v1()', 'EXECUTE') then
+    raise exception 'authenticated lost execute on get_admin_operations_v1';
   end if;
 
   if not exists (
@@ -29,7 +33,7 @@ begin
       and cmd = 'SELECT'
       and 'authenticated' = any(roles)
   ) then
-    raise exception 'authenticated audit_logs read policy missing';
+    raise exception 'authenticated audit_logs policy missing';
   end if;
 
   if not exists (
@@ -40,10 +44,10 @@ begin
       and cmd = 'SELECT'
       and 'authenticated' = any(roles)
   ) then
-    raise exception 'authenticated admin_audit_logs read policy missing';
+    raise exception 'authenticated admin_audit_logs policy missing';
   end if;
 end $$;
 
-select extensions.pass('anonymous audit-log table reads are revoked while authenticated admin policies remain available');
+select extensions.pass('client roles cannot read audit tables directly and the protected admin RPC remains executable');
 select * from extensions.finish();
 rollback;
