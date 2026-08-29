@@ -26,6 +26,7 @@ import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { HomeTab } from "@/components/HomeTab";
 import { GameTab } from "@/components/GameTab";
 import { DailyScratchPanel, MysteryScratchPanel } from "@/components/SpecialScratchPanels";
+import { RealtimeSyncBadge } from "@/components/RealtimeSyncBadge";
 
 const StoreTab = lazy(async () => ({ default: (await import("@/components/StoreTab")).StoreTab }));
 const AdminPanel = lazy(async () => ({
@@ -78,15 +79,20 @@ function Dashboard() {
               <Dices className="size-5 text-primary-foreground" />
             </div>
             <span className="hidden text-sm font-semibold sm:block">{profile?.email}</span>
+            <RealtimeSyncBadge userId={profile?.id} />
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-bold">
               <Wallet className="size-4 text-success" />
-              <span className="text-success">{formatBRL(profile?.balance ?? 0)}</span>
+              <span data-testid="header-balance" className="text-success">
+                {formatBRL(profile?.balance ?? 0)}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-bold">
               <Coins className="size-4 text-accent" />
-              <span className="text-accent">{profile?.points ?? 0}</span>
+              <span data-testid="header-points" className="text-accent">
+                {profile?.points ?? 0}
+              </span>
             </div>
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
               <LogOut className="size-4" />
