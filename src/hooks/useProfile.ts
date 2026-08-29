@@ -35,15 +35,20 @@ export function useProfile() {
       if (error) throw error;
       if (!data) return null;
 
+      const adminRole = parseAdminRole(data.admin_role, data.is_admin);
+      const isAdmin = adminRole === "admin" || adminRole === "admin_master";
+
       return {
         id: data.id,
         email: data.email ?? auth.user.email ?? null,
         balance: Number(data.balance),
         points: data.points,
-        is_admin: data.is_admin,
-        admin_role: parseAdminRole(data.admin_role, data.is_admin),
+        is_admin: isAdmin,
+        admin_role: adminRole,
       };
     },
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
   });
 }
 
