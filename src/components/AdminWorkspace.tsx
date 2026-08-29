@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MathAdminPanel } from "@/components/MathAdminPanel";
-import { formatBRL } from "@/hooks/useProfile";
+import { formatBRL, useProfile, type AdminRole } from "@/hooks/useProfile";
 import { specialScratchStatusQueryKey } from "@/hooks/useSpecialScratchStatus";
 
 const adminOperationsQueryKey = ["admin-operations"] as const;
@@ -99,6 +99,7 @@ type UserAdmin = {
   xp: number;
   level: number;
   is_admin: boolean;
+  admin_role: AdminRole;
   created_at: string;
 };
 
@@ -358,6 +359,7 @@ function parseUser(value: unknown): UserAdmin | null {
     xp,
     level,
     is_admin: raw.is_admin === true,
+    admin_role: parseAdminRole(raw.admin_role, raw.is_admin === true),
     created_at: createdAt,
   };
 }
