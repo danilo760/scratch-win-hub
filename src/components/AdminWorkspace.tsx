@@ -615,12 +615,12 @@ export function AdminWorkspace() {
     <Tabs defaultValue="overview" className="space-y-4">
       <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto p-1">
         <AdminTrigger value="overview" label="Visão Geral" />
-        <AdminTrigger value="scratchcards" label="Raspadinhas" />
-        <AdminTrigger value="math" label="Versões Matemáticas" />
+        {isMaster && <AdminTrigger value="scratchcards" label="Raspadinhas" />}
+        {isMaster && <AdminTrigger value="math" label="Versões Matemáticas" />}
         <AdminTrigger value="outcomes" label="Resultados" />
         <AdminTrigger value="rarities" label="Raridades" />
-        <AdminTrigger value="daily" label="Diária" />
-        <AdminTrigger value="mystery" label="Misteriosa" />
+        {isMaster && <AdminTrigger value="daily" label="Diária" />}
+        {isMaster && <AdminTrigger value="mystery" label="Misteriosa" />}
         <AdminTrigger value="store" label="Loja" />
         <AdminTrigger value="redemptions" label="Resgates" />
         <AdminTrigger value="achievements" label="Conquistas" />
