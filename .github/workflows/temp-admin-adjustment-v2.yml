@@ -99,11 +99,8 @@ jobs:
 
           workflow = Path('.github/workflows/database-tests.yml')
           text = workflow.read_text()
-          old = '''          node tests/store-redemption-concurrency.integration.mjs
-          '''
-          new = '''          node tests/store-redemption-concurrency.integration.mjs
-          node tests/admin-master-adjustment-concurrency.integration.mjs
-          '''
+          old = '          node tests/store-redemption-concurrency.integration.mjs'
+          new = old + '\n          node tests/admin-master-adjustment-concurrency.integration.mjs'
           if text.count(old) != 1:
             raise SystemExit(f'expected one database test tail, found {text.count(old)}')
           workflow.write_text(text.replace(old, new, 1))
