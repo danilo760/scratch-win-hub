@@ -86,7 +86,7 @@ jobs:
       - name: Preview Cloudflare production application
         shell: bash
         run: |
-          nohup bunx --bun wrangler@4.126.0 dev \
+          nohup bunx wrangler@4.126.0 dev \
             --config .output/server/wrangler.json \
             --ip 127.0.0.1 \
             --port 4173 \
@@ -96,7 +96,7 @@ jobs:
           echo $! > /tmp/browser-e2e-app.pid
 
           for attempt in $(seq 1 60); do
-            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
+            if curl --fail --silent --show-error --connect-timeout 2 --max-time 3 http://127.0.0.1:4173/ > /dev/null; then
               exit 0
             fi
             sleep 1
