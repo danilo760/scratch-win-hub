@@ -27,17 +27,18 @@ async function assertNoHorizontalOverflow(page, label) {
 }
 
 async function assertDesktopEffectsHidden(scope, label) {
-  const visibleCount = await scope.locator('[data-effect-tier="desktop"]').evaluateAll((elements) =>
-    elements.filter((element) => {
-      const style = getComputedStyle(element);
-      const rect = element.getBoundingClientRect();
-      return (
-        style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        rect.width > 0 &&
-        rect.height > 0
-      );
-    }).length,
+  const visibleCount = await scope.locator('[data-effect-tier="desktop"]').evaluateAll(
+    (elements) =>
+      elements.filter((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      }).length,
   );
   assert.equal(visibleCount, 0, `${label} must hide desktop-only effects on mobile`);
 }
@@ -177,7 +178,11 @@ try {
       .waitFor({ state: "visible", timeout: 10_000 });
     await assertNoHorizontalOverflow(page, "regular rarity effects mobile");
 
-    assert.deepEqual(pageErrors, [], `rarity effects emitted page errors: ${pageErrors.join(" | ")}`);
+    assert.deepEqual(
+      pageErrors,
+      [],
+      `rarity effects emitted page errors: ${pageErrors.join(" | ")}`,
+    );
     assert.deepEqual(
       consoleErrors,
       [],
