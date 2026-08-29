@@ -166,7 +166,7 @@ async function setupMysteryFixture(email, password, userId) {
 
   const { error: promoteError } = await admin
     .from("profiles")
-    .update({ is_admin: true })
+    .update({ admin_role: "admin_master" })
     .eq("id", userId);
   if (promoteError) throw promoteError;
 
@@ -202,7 +202,7 @@ async function setupMysteryFixture(email, password, userId) {
     await fixtureAdmin.auth.signOut();
     const { error: demoteError } = await admin
       .from("profiles")
-      .update({ is_admin: false })
+      .update({ admin_role: "user" })
       .eq("id", userId);
     if (demoteError) throw demoteError;
   }
@@ -305,7 +305,7 @@ async function exerciseProfile(page) {
 async function exerciseAdmin(page, userId) {
   const { error: promoteError } = await admin
     .from("profiles")
-    .update({ is_admin: true })
+    .update({ admin_role: "admin" })
     .eq("id", userId);
   if (promoteError) throw promoteError;
 
@@ -315,8 +315,9 @@ async function exerciseAdmin(page, userId) {
   await adminTab.waitFor({ state: "visible" });
   await adminTab.click();
 
-  const adminPanel = page.locator('section[aria-labelledby="admin-panel-title"]');
+  let adminPanel = page.locator('section[aria-labelledby="admin-panel-title"]');
   await adminPanel.waitFor({ state: "visible" });
+  await adminPanel.getByText("Admin", { exact: true }).first().waitFor({ state: "visible" });
 
   await adminPanel
     .getByRole("heading", { name: "Indicadores operacionais" })
@@ -375,9 +376,31 @@ async function exerciseAdmin(page, userId) {
   await assertNoHorizontalOverflow(page, "admin mobile resgates");
   await page.screenshot({ path: `${artifactDir}/admin-mobile-390x844.png`, fullPage: true });
 
+  const { error: masterPromoteError } = await admin
+    .from("profiles")
+    .update({ admin_role: "admin_master" })
+    .eq("id", userId);
+  if (masterPromoteError) throw masterPromoteError;
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  await page.getByRole("tab", { name: "Admin", exact: true }).click();
+  adminPanel = page.locator('section[aria-labelledby="admin-panel-title"]');
+  await adminPanel.waitFor({ state: "visible" });
+  await adminPanel.getByText("Admin Master", { exact: true }).first().waitFor({ state: "visible" });
+  await adminPanel
+    .getByRole("heading", { name: "Administração Master", exact: true })
+    .waitFor({ state: "visible" });
+  await adminPanel
+    .getByText("Controle de Admin Master", { exact: true })
+    .waitFor({ state: "visible" });
+  await assertNoBlankScreen(page, "admin master controls");
+  await assertNoHorizontalOverflow(page, "admin master controls");
+  await page.screenshot({ path: `${artifactDir}/admin-master-1440x900.png`, fullPage: true });
+
   const { error: demoteError } = await admin
     .from("profiles")
-    .update({ is_admin: false })
+    .update({ admin_role: "user" })
     .eq("id", userId);
   if (demoteError) throw demoteError;
 }
@@ -486,7 +509,7 @@ try {
     await exerciseProfile(page);
     assertRuntime("profile update + reload");
     await exerciseAdmin(page, userId);
-    assertRuntime("admin operations + math audit");
+    assertRuntime("admin + admin master operations and math audit");
 
     await page.getByRole("button", { name: "Sair" }).click();
     await page.waitForURL((url) => url.pathname === "/");
