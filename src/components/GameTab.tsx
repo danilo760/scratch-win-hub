@@ -165,7 +165,9 @@ export function GameTab() {
       <Card className="mx-auto max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center gap-2">
-            <Sparkles className={`size-5 ${scratchRarityPresentation[result.rarity_slug].iconClass}`} />{" "}
+            <Sparkles
+              className={`size-5 ${scratchRarityPresentation[result.rarity_slug].iconClass}`}
+            />{" "}
             {result.title}
           </CardTitle>
         </CardHeader>
