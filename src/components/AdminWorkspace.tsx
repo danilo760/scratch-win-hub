@@ -565,6 +565,8 @@ function shortId(value: string): string {
 
 export function AdminWorkspace() {
   const qc = useQueryClient();
+  const { data: profile } = useProfile();
+  const isMaster = profile?.admin_role === "admin_master";
   const operationsQuery = useQuery({
     queryKey: adminOperationsQueryKey,
     queryFn: async () => {
