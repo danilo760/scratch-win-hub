@@ -155,7 +155,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="rewards" className="pt-6">
-            <MyRewards />
+            <MyRewards onOpenStore={() => setTab("store")} />
           </TabsContent>
 
           <TabsContent value="profile" className="pt-6">
@@ -222,7 +222,7 @@ function parseMyRewards(value: unknown): MyReward[] {
   });
 }
 
-function MyRewards() {
+function MyRewards({ onOpenStore }: { onOpenStore: () => void }) {
   const {
     data,
     isLoading,
@@ -241,12 +241,20 @@ function MyRewards() {
     },
   });
 
-  if (isLoading) return <Loader2 className="animate-spin" />;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-48 items-center justify-center" aria-label="Carregando prêmios">
+        <Loader2 className="size-6 animate-spin text-primary" />
+      </div>
+    );
+  }
   if (rewardsError) {
     return (
-      <p role="alert" className="py-12 text-center text-destructive">
-        Não foi possível carregar seus prêmios.
-      </p>
+      <Card className="border-destructive/30">
+        <CardContent className="py-12 text-center text-destructive">
+          <p role="alert">Não foi possível carregar seus prêmios.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -285,7 +293,18 @@ function MyRewards() {
             </div>
           ))
         ) : (
-          <p className="text-muted-foreground">Você ainda não possui prêmios solicitados.</p>
+          <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed bg-secondary/30 px-6 py-10 text-center">
+            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Gift className="size-6" aria-hidden="true" />
+            </div>
+            <h2 className="font-bold">Seus próximos prêmios aparecem aqui</h2>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Troque seus pontos na Loja e acompanhe o protocolo e a entrega em um só lugar.
+            </p>
+            <Button className="mt-5" onClick={onOpenStore}>
+              <ShoppingBag className="size-4" /> Ver Loja
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
