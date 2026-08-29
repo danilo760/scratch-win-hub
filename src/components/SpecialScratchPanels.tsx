@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Gift, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Gift, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -107,9 +107,56 @@ function parseMysteryReveal(value: unknown): MysteryReveal | null {
   };
 }
 
+function StatusQueryError({
+  onRetry,
+  retrying,
+}: {
+  onRetry: () => void;
+  retrying: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
+      <AlertTriangle className="size-6 text-destructive" aria-hidden="true" />
+      <div className="space-y-1">
+        <strong className="block">Não foi possível verificar a disponibilidade.</strong>
+        <p role="alert" className="text-sm text-muted-foreground">
+          Este erro não foi tratado como “Em breve”. Tente consultar novamente.
+        </p>
+      </div>
+      <Button variant="outline" disabled={retrying} onClick={onRetry}>
+        {retrying ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <RefreshCw className="size-4" />
+        )}{" "}
+        {retrying ? "Tentando novamente…" : "Tentar novamente"}
+      </Button>
+    </div>
+  );
+}
+
+function StatusLoading() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-28 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground"
+    >
+      <Loader2 className="size-5 animate-spin" />
+      <span>Verificando disponibilidade…</span>
+    </div>
+  );
+}
+
 export function DailyScratchPanel() {
   const qc = useQueryClient();
-  const { data: status, isLoading } = useSpecialScratchStatus();
+  const {
+    data: status,
+    isLoading,
+    isFetching,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useSpecialScratchStatus();
   const [busy, setBusy] = useState(false);
   const [reveal, setReveal] = useState<DailyReveal | null>(null);
   const pendingRequestId = useRef<string | null>(null);
@@ -173,7 +220,9 @@ export function DailyScratchPanel() {
             />
           </div>
         ) : isLoading ? (
-          <Loader2 className="mx-auto animate-spin" />
+          <StatusLoading />
+        ) : statusError ? (
+          <StatusQueryError onRetry={() => void refetchStatus()} retrying={isFetching} />
         ) : status?.daily_available ? (
           <>
             <p className="text-sm text-muted-foreground">
@@ -218,7 +267,13 @@ export function DailyScratchPanel() {
 
 export function MysteryScratchPanel() {
   const qc = useQueryClient();
-  const { data: status, isLoading } = useSpecialScratchStatus();
+  const {
+    data: status,
+    isLoading,
+    isFetching,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useSpecialScratchStatus();
   const [busy, setBusy] = useState(false);
   const [reveal, setReveal] = useState<MysteryReveal | null>(null);
   const pendingRequestId = useRef<string | null>(null);
@@ -318,7 +373,9 @@ export function MysteryScratchPanel() {
             />
           </div>
         ) : isLoading ? (
-          <Loader2 className="mx-auto animate-spin" />
+          <StatusLoading />
+        ) : statusError ? (
+          <StatusQueryError onRetry={() => void refetchStatus()} retrying={isFetching} />
         ) : status?.mystery_available ? (
           <>
             <p className="text-sm text-muted-foreground">
