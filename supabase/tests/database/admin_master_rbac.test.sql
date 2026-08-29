@@ -47,7 +47,13 @@ begin
   end;
 
   begin
-    perform public.admin_master_adjust_user_v1('a1000000-0000-4000-8000-000000000001',1,5,'forbidden');
+    perform public.admin_master_adjust_user_v2(
+      'a1000000-0000-4000-8000-000000000001',
+      'a5000000-0000-4000-8000-000000000005',
+      1,
+      5,
+      'forbidden'
+    );
     raise exception 'normal admin adjusted wallet';
   exception when others then
     if sqlerrm='normal admin adjusted wallet' then raise; end if;
@@ -78,8 +84,12 @@ begin
   v_role := public.admin_set_user_role_v1('a1000000-0000-4000-8000-000000000001','admin');
   if v_role->>'admin_role' <> 'admin' then raise exception 'master role change failed: %',v_role; end if;
 
-  v_wallet := public.admin_master_adjust_user_v1(
-    'a1000000-0000-4000-8000-000000000001', 2.50, 15, 'RBAC test adjustment'
+  v_wallet := public.admin_master_adjust_user_v2(
+    'a1000000-0000-4000-8000-000000000001',
+    'a6000000-0000-4000-8000-000000000006',
+    2.50,
+    15,
+    'RBAC test adjustment'
   );
   if (v_wallet->>'balance')::numeric <> 12.50 or (v_wallet->>'points')::integer <> 15 then
     raise exception 'wallet adjustment response invalid: %',v_wallet;
