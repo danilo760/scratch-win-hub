@@ -109,7 +109,8 @@ export function RealtimeSyncBadge({ userId }: Props) {
       : status === "connecting"
         ? "Conectando atualizações em tempo real"
         : "Atualizações em tempo real indisponíveis";
-  const text = status === "live" ? "Ao vivo" : status === "connecting" ? "Conectando" : "Offline";
+  const text =
+    status === "live" ? "Ao vivo" : status === "connecting" ? "Conectando" : "Offline";
   const dotClass =
     status === "live"
       ? "bg-success"
@@ -122,7 +123,7 @@ export function RealtimeSyncBadge({ userId }: Props) {
       role="status"
       aria-label={label}
       data-testid="realtime-status"
-      className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-2.5 py-1.5 text-xs font-medium"
+      className="hidden items-center gap-1.5 rounded-lg border border-border bg-secondary px-2.5 py-1.5 text-xs font-medium sm:flex"
     >
       <span className={`size-2 rounded-full ${dotClass}`} aria-hidden="true" />
       <span>{text}</span>
