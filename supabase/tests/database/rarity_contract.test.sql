@@ -22,7 +22,7 @@ end $$;
 
 insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values ('21212121-2121-4121-8121-212121212121','authenticated','authenticated','rarity-admin@example.invalid','{}','{"display_name":"Rarity Admin"}',now(),now());
-update public.profiles set is_admin=true where id='21212121-2121-4121-8121-212121212121';
+update public.profiles set admin_role='admin_master' where id='21212121-2121-4121-8121-212121212121';
 
 insert into public.scratchcards(id,title,price,active)
 values ('22222222-3333-4222-8222-333333333333','Rarity contract fixture',1,true);
@@ -72,6 +72,6 @@ end $$;
 
 reset role;
 
-select extensions.pass('rarity contract uses only bronze/prata/ouro/diamante and admin draft creation rejects English aliases through the real RPC surface');
+select extensions.pass('rarity contract uses only bronze/prata/ouro/diamante and admin master draft creation rejects English aliases through the real RPC surface');
 select * from extensions.finish();
 rollback;
