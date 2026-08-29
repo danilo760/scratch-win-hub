@@ -242,7 +242,11 @@ try {
   await dialog.waitFor({ state: "hidden", timeout: 10_000 });
 
   const published = await readMysteryVersion(mysteryVersionId);
-  assert.equal(published.status, "PUBLISHED", "confirmed mystery publication did not publish DRAFT");
+  assert.equal(
+    published.status,
+    "PUBLISHED",
+    "confirmed mystery publication did not publish DRAFT",
+  );
   assert.ok(published.published_at, "published mystery version has no published_at timestamp");
   assert.equal(
     (await readMysteryEntries(mysteryVersionId)).length,
@@ -256,7 +260,11 @@ try {
     .eq("status", "PUBLISHED");
   assert.ifError(publishedPoolsError);
   assert.equal(publishedPools?.length, 1, "there must be exactly one published mystery pool");
-  assert.equal(publishedPools?.[0]?.id, mysteryVersionId, "the isolated pool is not the published pool");
+  assert.equal(
+    publishedPools?.[0]?.id,
+    mysteryVersionId,
+    "the isolated pool is not the published pool",
+  );
 
   assert.deepEqual(
     pageErrors,
