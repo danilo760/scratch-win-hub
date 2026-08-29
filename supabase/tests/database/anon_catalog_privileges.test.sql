@@ -17,8 +17,8 @@ begin
     raise exception 'authenticated lost select on public.scratchcards';
   end if;
 
-  if not has_table_privilege('authenticated', 'public.achievements', 'SELECT') then
-    raise exception 'authenticated lost select on public.achievements';
+  if has_table_privilege('authenticated', 'public.achievements', 'SELECT') then
+    raise exception 'authenticated can still select public.achievements directly';
   end if;
 
   if not has_function_privilege('anon', 'public.get_transparency_v1()', 'EXECUTE') then
@@ -28,8 +28,12 @@ begin
   if not has_function_privilege('anon', 'public.get_public_profile(text)', 'EXECUTE') then
     raise exception 'anon lost public profile RPC access';
   end if;
+
+  if not has_function_privilege('authenticated', 'public.get_admin_operations_v1()', 'EXECUTE') then
+    raise exception 'authenticated lost protected admin RPC access';
+  end if;
 end $$;
 
-select extensions.pass('anonymous direct catalog reads are revoked while authenticated reads and public RPCs remain available');
+select extensions.pass('catalog grants match the rebuilt schema while public and protected RPC access remains available');
 select * from extensions.finish();
 rollback;
