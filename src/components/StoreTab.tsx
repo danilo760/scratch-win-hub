@@ -121,7 +121,11 @@ export function StoreTab() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
+      <div
+        className="flex min-h-56 items-center justify-center"
+        role="status"
+        aria-label="Carregando loja"
+      >
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -129,15 +133,29 @@ export function StoreTab() {
 
   if (storeError) {
     return (
-      <p role="alert" className="py-16 text-center text-destructive">
-        Não foi possível carregar a loja. Tente novamente.
-      </p>
+      <Card className="border-destructive/40">
+        <CardContent className="py-12 text-center">
+          <p role="alert" className="font-medium text-destructive">
+            Não foi possível carregar a loja. Tente novamente.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!items?.length) {
     return (
-      <p className="py-16 text-center text-muted-foreground">Nenhum item disponível na loja.</p>
+      <Card className="border-dashed bg-secondary/20">
+        <CardContent className="flex min-h-56 flex-col items-center justify-center px-6 py-12 text-center">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
+            <Gift className="size-6 text-primary" aria-hidden="true" />
+          </div>
+          <h2 className="text-lg font-bold">A loja está sendo preparada</h2>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            Novos prêmios aparecerão aqui assim que estiverem disponíveis para resgate.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
