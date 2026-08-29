@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBRL, profileQueryKey, type AdminRole } from "@/hooks/useProfile";
@@ -131,7 +137,13 @@ export function AdminMasterUserControls() {
   );
 }
 
-function RoleRow({ user, onChanged }: { user: MasterUser; onChanged: () => Promise<void> }) {
+function RoleRow({
+  user,
+  onChanged,
+}: {
+  user: MasterUser;
+  onChanged: () => Promise<void>;
+}) {
   const [role, setRole] = useState<AdminRole>(user.admin_role);
   const [busy, setBusy] = useState(false);
 
