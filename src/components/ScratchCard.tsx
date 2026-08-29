@@ -6,6 +6,8 @@ import { formatBRL } from "@/hooks/useProfile";
 export type ScratchRarity = "bronze" | "prata" | "ouro" | "diamante";
 export type ScratchVisualRarity = ScratchRarity | "misteriosa";
 
+// Shared presentation metadata is intentionally exported alongside the component.
+// eslint-disable-next-line react-refresh/only-export-components
 export const scratchRarityPresentation: Record<
   ScratchVisualRarity,
   {
