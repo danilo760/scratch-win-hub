@@ -173,6 +173,24 @@ begin
   );
   perform public.publish_math_version_v1(v2);
   update mystery_pinned_ids set v2_id = v2;
+
+  if not exists(
+    select 1
+    from public.scratch_math_versions
+    where id = '74747474-7474-4474-8474-747474747474'
+      and status = 'RETIRED'
+  ) then
+    raise exception 'Pinned V1 should be RETIRED after V2 publication';
+  end if;
+
+  if not exists(
+    select 1
+    from public.scratch_math_versions
+    where id = v2
+      and status = 'PUBLISHED'
+  ) then
+    raise exception 'V2 should be PUBLISHED before settlement';
+  end if;
 end $$;
 
 reset role;
@@ -190,10 +208,9 @@ declare
   v_first jsonb;
   v_retry jsonb;
   v_play_id uuid;
-  v2 uuid;
 begin
-  select opening, v2_id
-  into v_opening, v2
+  select opening
+  into v_opening
   from mystery_pinned_ids
   limit 1;
 
@@ -215,24 +232,6 @@ begin
       v_opening,
       v_first,
       v_retry;
-  end if;
-
-  if not exists(
-    select 1
-    from public.scratch_math_versions
-    where id = '74747474-7474-4474-8474-747474747474'
-      and status = 'RETIRED'
-  ) then
-    raise exception 'Pinned V1 should be RETIRED after V2 publication';
-  end if;
-
-  if not exists(
-    select 1
-    from public.scratch_math_versions
-    where id = v2
-      and status = 'PUBLISHED'
-  ) then
-    raise exception 'V2 should be PUBLISHED before settlement';
   end if;
 
   if (
