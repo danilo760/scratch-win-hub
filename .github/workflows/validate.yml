@@ -28,10 +28,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Format
-        run: |
-          bunx prettier --write src/components/AdminMasterUserControls.tsx
-          git diff -- src/components/AdminMasterUserControls.tsx
-          exit 1
+        run: bunx prettier --check .
       - name: Lint
         run: bun run lint
       - name: Typecheck
