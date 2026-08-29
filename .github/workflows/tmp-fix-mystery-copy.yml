@@ -1,0 +1,42 @@
+name: Temporary Fix Mystery Copy
+
+on:
+  push:
+    branches: [codex/confirm-mystery-admin-actions]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/confirm-mystery-admin-actions
+
+      - name: Correct copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/components/AdminWorkspace.tsx')
+          source = path.read_text()
+          old = 'paspa a RETIRED'
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one typo, found {source.count(old)}')
+          path.write_text(source.replace(old, 'passa a RETIRED', 1))
+          PY
+
+      - name: Remove temporary workflow
+        run: git rm .github/workflows/tmp-fix-mystery-copy.yml
+
+      - name: Commit correction and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/AdminWorkspace.tsx
+          git commit -m "fix: correct mystery publication confirmation copy"
+          git push origin HEAD:codex/confirm-mystery-admin-actions
