@@ -73,10 +73,15 @@ try {
 
     assert.match(await page.getByTestId("header-balance").innerText(), /100,00/);
     assert.equal((await page.getByTestId("header-points").innerText()).trim(), "2000");
+    assert.equal(
+      await page.getByRole("tab", { name: "Admin", exact: true }).count(),
+      0,
+      "regular user must not see Admin before promotion",
+    );
 
     const { error: externalUpdateError } = await admin
       .from("profiles")
-      .update({ balance: 125.5, points: 2_222 })
+      .update({ balance: 125.5, points: 2_222, admin_role: "admin" })
       .eq("id", userId);
     if (externalUpdateError) throw externalUpdateError;
 
@@ -87,6 +92,15 @@ try {
     await page
       .getByTestId("header-points")
       .filter({ hasText: "2222" })
+      .waitFor({ state: "visible", timeout: 15_000 });
+
+    const adminTab = page.getByRole("tab", { name: "Admin", exact: true });
+    await adminTab.waitFor({ state: "visible", timeout: 15_000 });
+    const adminShortcut = page.getByRole("button", { name: "Abrir painel", exact: true });
+    await adminShortcut.waitFor({ state: "visible", timeout: 15_000 });
+    await adminShortcut.click();
+    await page
+      .getByRole("heading", { name: "Painel Administrativo", exact: true })
       .waitFor({ state: "visible", timeout: 15_000 });
 
     assert.equal(
@@ -101,7 +115,7 @@ try {
     );
 
     await page.screenshot({
-      path: "playwright-artifacts/realtime-profile-sync-1440x900.png",
+      path: "playwright-artifacts/realtime-admin-promotion-1440x900.png",
       fullPage: true,
     });
 

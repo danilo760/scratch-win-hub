@@ -1,4 +1,4 @@
-import { Gift, Sparkles, Store, Trophy, UserCircle } from "lucide-react";
+import { Gift, ShieldCheck, Sparkles, Store, Trophy, UserCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,8 @@ export function HomeTab({ onNavigate }: Props) {
       return data;
     },
   });
+
+  const isAdmin = profile?.admin_role === "admin" || profile?.admin_role === "admin_master";
 
   const dailyDescription = specialStatus?.daily_claimed_today
     ? "Sua cortesia de hoje já foi utilizada. Você ainda pode consultar o resultado do dia."
@@ -157,7 +159,18 @@ export function HomeTab({ onNavigate }: Props) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className={`grid gap-3 sm:grid-cols-2 ${isAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+        {isAdmin && (
+          <Card className="border-primary/30">
+            <CardContent className="p-4">
+              <ShieldCheck className="size-5 text-primary" />
+              <strong className="mt-2 block">Painel administrativo</strong>
+              <Button variant="link" className="h-auto px-0" onClick={() => onNavigate("admin")}>
+                Abrir painel
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardContent className="p-4">
             <Trophy className="size-5 text-accent" />
