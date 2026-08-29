@@ -55,7 +55,10 @@ export function AdminPanel() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={isMaster ? "default" : "secondary"} className="gap-1.5 rounded-full px-3 py-1">
+            <Badge
+              variant={isMaster ? "default" : "secondary"}
+              className="gap-1.5 rounded-full px-3 py-1"
+            >
               {isMaster ? (
                 <Crown className="size-3.5" aria-hidden="true" />
               ) : (
@@ -123,7 +126,8 @@ export function AdminPanel() {
                 </h2>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Papéis e ajustes administrativos protegidos por autorização server-side e trilha de auditoria.
+                Papéis e ajustes administrativos protegidos por autorização server-side e trilha de
+                auditoria.
               </p>
             </div>
             <Badge>Exclusivo Admin Master</Badge>
