@@ -6,7 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScratchCard, type ScratchRarity } from "@/components/ScratchCard";
+import {
+  ScratchCard,
+  scratchRarityPresentation,
+  type ScratchRarity,
+} from "@/components/ScratchCard";
 import { MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 import { formatBRL, profileQueryKey, useProfileUpdater } from "@/hooks/useProfile";
 
@@ -161,7 +165,8 @@ export function GameTab() {
       <Card className="mx-auto max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center gap-2">
-            <Sparkles className="size-5 text-accent" /> {result.title}
+            <Sparkles className={`size-5 ${scratchRarityPresentation[result.rarity_slug].iconClass}`} />{" "}
+            {result.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -199,41 +204,53 @@ export function GameTab() {
     <div className="space-y-6">
       <MysteryScratchPanel />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card) => (
-          <Card key={card.id} className="group relative overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Ticket className="size-5 text-accent" />
-                {card.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
-                <Badge variant="secondary" className="capitalize">
-                  {card.rarity_name}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Resultado calculado pela versão matemática publicada antes da revelação.
-              </p>
-              <Button
-                variant="glow"
-                className="w-full"
-                disabled={playingId === card.id}
-                onClick={() => play(card.id, card.title)}
-              >
-                {playingId === card.id ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" /> Processando...
-                  </>
-                ) : (
-                  "Comprar e Jogar"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {cards.map((card) => {
+          const theme = scratchRarityPresentation[card.rarity_slug];
+          return (
+            <Card
+              key={card.id}
+              data-testid={`scratch-option-${card.rarity_slug}`}
+              data-rarity={card.rarity_slug}
+              className={`group relative overflow-hidden ${theme.optionClass}`}
+            >
+              <div
+                aria-hidden
+                className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${theme.surface}`}
+              />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Ticket className={`size-5 ${theme.iconClass}`} />
+                  {card.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
+                  <Badge variant="secondary" className={`capitalize ${theme.badgeClass}`}>
+                    {card.rarity_name}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Resultado calculado pela versão matemática publicada antes da revelação.
+                </p>
+                <Button
+                  variant="glow"
+                  className="w-full"
+                  disabled={playingId === card.id}
+                  onClick={() => play(card.id, card.title)}
+                >
+                  {playingId === card.id ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" /> Processando...
+                    </>
+                  ) : (
+                    "Comprar e Jogar"
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
