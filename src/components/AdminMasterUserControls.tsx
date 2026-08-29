@@ -5,13 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBRL, profileQueryKey, type AdminRole } from "@/hooks/useProfile";
@@ -119,8 +113,8 @@ export function AdminMasterUserControls() {
           </CardTitle>
           <CardDescription>
             Somente Admin Master pode alterar papéis, matemática, Daily, Mystery, raspadinhas e
-            ajustes administrativos de saldo/pontos. Toda alteração financeira abaixo gera ledger
-            e auditoria.
+            ajustes administrativos de saldo/pontos. Toda alteração financeira abaixo gera ledger e
+            auditoria.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -137,13 +131,7 @@ export function AdminMasterUserControls() {
   );
 }
 
-function RoleRow({
-  user,
-  onChanged,
-}: {
-  user: MasterUser;
-  onChanged: () => Promise<void>;
-}) {
+function RoleRow({ user, onChanged }: { user: MasterUser; onChanged: () => Promise<void> }) {
   const [role, setRole] = useState<AdminRole>(user.admin_role);
   const [busy, setBusy] = useState(false);
 
@@ -311,8 +299,8 @@ function WalletAdjustment({
           />
         </div>
         <Button className="md:col-span-2" onClick={apply} disabled={busy || !users.length}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />} Aplicar
-          ajuste auditado
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}{" "}
+          Aplicar ajuste auditado
         </Button>
       </CardContent>
     </Card>
