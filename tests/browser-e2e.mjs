@@ -151,6 +151,106 @@ async function exerciseAuthenticatedViewports(page) {
   }
 }
 
+async function setupMysteryFixture(email, password, userId) {
+  const { data: card, error: cardError } = await admin
+    .from("scratchcards")
+    .select("id, published_version_id")
+    .eq("active", true)
+    .not("published_version_id", "is", null)
+    .limit(1)
+    .single();
+  if (cardError) throw cardError;
+  assert.ok(card?.id, "isolated browser fixture needs an active scratchcard");
+  assert.ok(card.published_version_id, "isolated browser fixture needs published math");
+
+  const { error: promoteError } = await admin
+    .from("profiles")
+    .update({ is_admin: true })
+    .eq("id", userId);
+  if (promoteError) throw promoteError;
+
+  const fixtureAdmin = createClient(supabaseUrl, publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    const { error: signInError } = await fixtureAdmin.auth.signInWithPassword({ email, password });
+    if (signInError) throw signInError;
+
+    const { data: poolId, error: createError } = await fixtureAdmin.rpc(
+      "admin_create_mystery_draft_v1",
+      { p_name: "Browser Mystery Pool" },
+    );
+    if (createError) throw createError;
+    assert.ok(poolId, "admin_create_mystery_draft_v1 did not return a pool id");
+
+    const { error: entryError } = await fixtureAdmin.rpc("admin_add_mystery_entry_v1", {
+      p_mystery_version_id: poolId,
+      p_scratchcard_id: card.id,
+      p_weight: 1,
+    });
+    if (entryError) throw entryError;
+
+    const { data: published, error: publishError } = await fixtureAdmin.rpc(
+      "admin_publish_mystery_v1",
+      { p_mystery_version_id: poolId },
+    );
+    if (publishError) throw publishError;
+    assert.equal(published?.status, "PUBLISHED", "browser Mystery pool did not publish");
+  } finally {
+    await fixtureAdmin.auth.signOut();
+    const { error: demoteError } = await admin
+      .from("profiles")
+      .update({ is_admin: false })
+      .eq("id", userId);
+    if (demoteError) throw demoteError;
+  }
+}
+
+async function exerciseMysteryScratch(page, userId) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("tab", { name: "Raspadinhas" }).click();
+  const openButton = page.getByRole("button", { name: "Abrir misteriosa", exact: true });
+  await openButton.waitFor({ state: "visible" });
+  await openButton.click();
+
+  const revealButton = page.getByRole("button", { name: "Revelar resultado", exact: true });
+  await revealButton.waitFor({ state: "visible", timeout: 10_000 });
+  await revealButton.click();
+  await page
+    .getByRole("button", { name: "Fechar resultado", exact: true })
+    .waitFor({ state: "visible", timeout: 10_000 });
+  await assertNoHorizontalOverflow(page, "mystery scratch result");
+
+  const { data: openings, error: openingsError } = await admin
+    .from("mystery_openings")
+    .select("client_request_id, scratchcard_id, math_version_id")
+    .eq("user_id", userId);
+  if (openingsError) throw openingsError;
+  assert.equal(openings.length, 1, "browser Mystery must create exactly one opening");
+
+  const { data: plays, error: playsError } = await admin
+    .from("plays")
+    .select("client_request_id, card_id, math_version_id, source")
+    .eq("user_id", userId)
+    .eq("source", "mystery");
+  if (playsError) throw playsError;
+  assert.equal(plays.length, 1, "browser Mystery must create exactly one play");
+
+  const opening = openings[0];
+  const play = plays[0];
+  assert.equal(play.client_request_id, opening.client_request_id, "Mystery request id changed");
+  assert.equal(play.card_id, opening.scratchcard_id, "Mystery scratchcard changed after opening");
+  assert.equal(
+    play.math_version_id,
+    opening.math_version_id,
+    "Mystery math version changed after opening",
+  );
+
+  await page.screenshot({ path: `${artifactDir}/mystery-scratch-390x844.png`, fullPage: true });
+  await page.getByRole("button", { name: "Fechar resultado", exact: true }).click();
+}
+
 async function exerciseScratchAndStore(page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("tab", { name: "Raspadinhas" }).click();
@@ -364,6 +464,8 @@ try {
   assert.equal(authCheck.user?.id, userId, "publishable-key auth returned the wrong local user");
   await publicAuth.auth.signOut();
 
+  await setupMysteryFixture(email, password, userId);
+
   const browser = await chromium.launch({ headless: true });
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -376,6 +478,8 @@ try {
     assertRuntime("login");
     await exerciseAuthenticatedViewports(page);
     assertRuntime("authenticated viewports");
+    await exerciseMysteryScratch(page, userId);
+    assertRuntime("mystery scratch pinned settlement");
     await exerciseScratchAndStore(page);
     assertRuntime("scratch + store + rewards");
     await exerciseProfile(page);
