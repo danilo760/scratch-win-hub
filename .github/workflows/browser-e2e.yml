@@ -114,6 +114,9 @@ jobs:
       - name: Run real browser flows
         run: node tests/browser-e2e.mjs
 
+      - name: Run Realtime visual sync
+        run: node tests/realtime-visual-sync.e2e.mjs
+
       - name: Collect application log
         if: always()
         run: |
