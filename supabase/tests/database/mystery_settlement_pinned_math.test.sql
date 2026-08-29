@@ -40,7 +40,7 @@ set balance = 100
 where id = '71717171-7171-4171-8171-717171717171';
 
 update public.profiles
-set is_admin = true
+set admin_role = 'admin_master'
 where id = '72727272-7272-4272-8272-727272727272';
 
 insert into public.scratchcards(
