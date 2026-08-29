@@ -80,6 +80,21 @@ begin
   if (r1->>'new_balance')::numeric <> 9 or (r1->>'new_points')::integer <> 5 then
     raise exception 'authoritative paid balances are incorrect: %', r1;
   end if;
+
+  begin
+    perform public.play_scratchcard_v1(
+      '19191919-1919-4919-8919-191919191919',
+      '17171717-1717-4717-8717-171717171717',
+      'contract-cross-card'
+    );
+    raise exception 'cross-card client_request_id reuse was accepted';
+  exception when others then
+    if sqlerrm='cross-card client_request_id reuse was accepted' then raise; end if;
+    if position('outra raspadinha' in sqlerrm)=0 then
+      raise exception 'unexpected cross-card reuse error: %', sqlerrm;
+    end if;
+  end;
+
   if (select count(*) from public.plays where user_id='13131313-1313-4313-8313-131313131313') <> 1 then
     raise exception 'retry duplicated paid play';
   end if;
@@ -139,6 +154,6 @@ end $$;
 
 reset role;
 
-select extensions.pass('paid play retries preserve the full contract and insufficient balance fails atomically');
+select extensions.pass('paid play retries preserve the full contract, reject cross-card key reuse and insufficient balance fails atomically');
 select * from extensions.finish();
 rollback;
