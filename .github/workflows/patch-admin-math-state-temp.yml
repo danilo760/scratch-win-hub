@@ -28,91 +28,108 @@ jobs:
           path = Path("src/components/AdminWorkspace.tsx")
           source = path.read_text()
 
-          old_query = '''  const { data, isLoading, error } = operationsQuery;
-          const { data: math = { versions: [], rarities: [] } } = useQuery({
-            queryKey: adminMathQueryKey,
-            queryFn: async () => {
-              const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
-              if (error) throw error;
-              return parseMathSnapshot(data);
-            },
-          });'''
-          new_query = '''  const { data, isLoading, error } = operationsQuery;
-          const mathQuery = useQuery({
-            queryKey: adminMathQueryKey,
-            queryFn: async () => {
-              const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
-              if (error) throw error;
-              return parseMathSnapshot(data);
-            },
-          });
-          const math = mathQuery.data ?? { versions: [], rarities: [] };'''
+          def block(*lines):
+              return "\n".join(lines)
 
-          old_tabs = '''      <TabsContent value="outcomes">
-                <OutcomesPanel versions={math.versions} cards={data.scratchcards} />
-              </TabsContent>
-              <TabsContent value="rarities">
-                <RaritiesPanel rarities={math.rarities} />
-              </TabsContent>'''
-          new_tabs = '''      <TabsContent value="outcomes">
-                {mathQuery.error ? (
-                  <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
-                ) : mathQuery.isLoading ? (
-                  <AdminMathLoadingState />
-                ) : (
-                  <OutcomesPanel versions={math.versions} cards={data.scratchcards} />
-                )}
-              </TabsContent>
-              <TabsContent value="rarities">
-                {mathQuery.error ? (
-                  <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
-                ) : mathQuery.isLoading ? (
-                  <AdminMathLoadingState />
-                ) : (
-                  <RaritiesPanel rarities={math.rarities} />
-                )}
-              </TabsContent>'''
+          old_query = block(
+              "  const { data, isLoading, error } = operationsQuery;",
+              "  const { data: math = { versions: [], rarities: [] } } = useQuery({",
+              "    queryKey: adminMathQueryKey,",
+              "    queryFn: async () => {",
+              '      const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);',
+              "      if (error) throw error;",
+              "      return parseMathSnapshot(data);",
+              "    },",
+              "  });",
+          )
+          new_query = block(
+              "  const { data, isLoading, error } = operationsQuery;",
+              "  const mathQuery = useQuery({",
+              "    queryKey: adminMathQueryKey,",
+              "    queryFn: async () => {",
+              '      const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);',
+              "      if (error) throw error;",
+              "      return parseMathSnapshot(data);",
+              "    },",
+              "  });",
+              "  const math = mathQuery.data ?? { versions: [], rarities: [] };",
+          )
 
-          old_simulator = '''      <TabsContent value="simulator">
-                <SimulatorPanel versions={math.versions} cards={data.scratchcards} />
-              </TabsContent>'''
-          new_simulator = '''      <TabsContent value="simulator">
-                {mathQuery.error ? (
-                  <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
-                ) : mathQuery.isLoading ? (
-                  <AdminMathLoadingState />
-                ) : (
-                  <SimulatorPanel versions={math.versions} cards={data.scratchcards} />
-                )}
-              </TabsContent>'''
+          old_tabs = block(
+              '      <TabsContent value="outcomes">',
+              "        <OutcomesPanel versions={math.versions} cards={data.scratchcards} />",
+              "      </TabsContent>",
+              '      <TabsContent value="rarities">',
+              "        <RaritiesPanel rarities={math.rarities} />",
+              "      </TabsContent>",
+          )
+          new_tabs = block(
+              '      <TabsContent value="outcomes">',
+              "        {mathQuery.error ? (",
+              "          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />",
+              "        ) : mathQuery.isLoading ? (",
+              "          <AdminMathLoadingState />",
+              "        ) : (",
+              "          <OutcomesPanel versions={math.versions} cards={data.scratchcards} />",
+              "        )}",
+              "      </TabsContent>",
+              '      <TabsContent value="rarities">',
+              "        {mathQuery.error ? (",
+              "          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />",
+              "        ) : mathQuery.isLoading ? (",
+              "          <AdminMathLoadingState />",
+              "        ) : (",
+              "          <RaritiesPanel rarities={math.rarities} />",
+              "        )}",
+              "      </TabsContent>",
+          )
 
-          old_helper = '''function AdminTrigger({ value, label }: { value: string; label: string }) {'''
-          new_helper = '''function AdminMathLoadingState() {
-            return (
-              <Card aria-busy="true">
-                <CardContent className="flex min-h-40 items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> Carregando configuração matemática…
-                </CardContent>
-              </Card>
-            );
-          }
+          old_simulator = block(
+              '      <TabsContent value="simulator">',
+              "        <SimulatorPanel versions={math.versions} cards={data.scratchcards} />",
+              "      </TabsContent>",
+          )
+          new_simulator = block(
+              '      <TabsContent value="simulator">',
+              "        {mathQuery.error ? (",
+              "          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />",
+              "        ) : mathQuery.isLoading ? (",
+              "          <AdminMathLoadingState />",
+              "        ) : (",
+              "          <SimulatorPanel versions={math.versions} cards={data.scratchcards} />",
+              "        )}",
+              "      </TabsContent>",
+          )
 
-          function AdminMathErrorState({ onRetry }: { onRetry: () => void }) {
-            return (
-              <Card>
-                <CardContent className="space-y-3 p-6">
-                  <p role="alert" className="text-destructive">
-                    Não foi possível carregar a configuração matemática.
-                  </p>
-                  <Button variant="outline" onClick={onRetry}>
-                    <RefreshCw className="size-4" /> Tentar novamente
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          }
-
-          function AdminTrigger({ value, label }: { value: string; label: string }) {'''
+          old_helper = "function AdminTrigger({ value, label }: { value: string; label: string }) {"
+          new_helper = block(
+              "function AdminMathLoadingState() {",
+              "  return (",
+              '    <Card aria-busy="true">',
+              '      <CardContent className="flex min-h-40 items-center justify-center gap-2 p-6 text-sm text-muted-foreground">',
+              '        <Loader2 className="size-4 animate-spin" /> Carregando configuração matemática…',
+              "      </CardContent>",
+              "    </Card>",
+              "  );",
+              "}",
+              "",
+              "function AdminMathErrorState({ onRetry }: { onRetry: () => void }) {",
+              "  return (",
+              "    <Card>",
+              '      <CardContent className="space-y-3 p-6">',
+              '        <p role="alert" className="text-destructive">',
+              "          Não foi possível carregar a configuração matemática.",
+              "        </p>",
+              '        <Button variant="outline" onClick={onRetry}>',
+              '          <RefreshCw className="size-4" /> Tentar novamente',
+              "        </Button>",
+              "      </CardContent>",
+              "    </Card>",
+              "  );",
+              "}",
+              "",
+              old_helper,
+          )
 
           replacements = [
               (old_query, new_query, "math query"),
