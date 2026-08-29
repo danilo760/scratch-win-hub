@@ -33,8 +33,11 @@ jobs:
       - name: Install application dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Chromium
-        run: bunx --bun playwright@1.62.1 install --with-deps chromium
+      - name: Install pinned browser tools
+        run: |
+          bun add --no-save --exact playwright@1.62.1
+          git diff --exit-code -- package.json bun.lock
+          bunx playwright install --with-deps chromium
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
