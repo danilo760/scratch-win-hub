@@ -1,0 +1,59 @@
+name: Temporary retire admin adjustment v1
+
+on:
+  push:
+    branches:
+      - codex/retire-admin-adjustment-v1
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/retire-admin-adjustment-v1
+          fetch-depth: 0
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.115.0
+      - name: Create migration and contract test update
+        shell: bash
+        run: |
+          migration_path=$(supabase migration new retire_admin_master_adjust_user_v1 | tail -n 1)
+          cat > "$migration_path" <<'SQL'
+          revoke execute on function public.admin_master_adjust_user_v1(uuid, numeric, integer, text) from authenticated;
+          SQL
+
+          python <<'PY'
+          from pathlib import Path
+          path = Path('supabase/tests/database/admin_master_adjustment_idempotency.test.sql')
+          text = path.read_text()
+          marker = "select extensions.pass('Admin Master wallet v2 is master-only, payload-bound and idempotent across retries');"
+          replacement = """select extensions.ok(
+            not has_function_privilege('authenticated', 'public.admin_master_adjust_user_v1(uuid,numeric,integer,text)', 'EXECUTE'),
+            'legacy Admin Master wallet v1 is not executable by authenticated clients'
+          );
+          select extensions.ok(
+            has_function_privilege('authenticated', 'public.admin_master_adjust_user_v2(uuid,uuid,numeric,integer,text)', 'EXECUTE'),
+            'idempotent Admin Master wallet v2 remains executable by authenticated clients'
+          );
+          select extensions.pass('Admin Master wallet v2 is master-only, payload-bound and idempotent across retries');"""
+          if text.count(marker) != 1:
+            raise SystemExit('expected one pgTAP completion marker')
+          text = text.replace(marker, replacement, 1)
+          text = text.replace('select extensions.plan(1);', 'select extensions.plan(3);', 1)
+          path.write_text(text)
+          PY
+
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/migrations supabase/tests/database/admin_master_adjustment_idempotency.test.sql
+          git commit -m "security: retire legacy admin adjustment rpc"
+          git push origin HEAD:codex/retire-admin-adjustment-v1
