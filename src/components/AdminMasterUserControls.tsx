@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw, Save, ShieldCheck, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -197,6 +197,7 @@ function WalletAdjustment({
   const [pointsDelta, setPointsDelta] = useState("0");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
 
   useEffect(() => {
     if (!users.some((user) => user.user_id === userId)) setUserId(users[0]?.user_id ?? "");
@@ -218,12 +219,19 @@ function WalletAdjustment({
       return;
     }
 
+    const normalizedReason = reason.trim();
+    const fingerprint = JSON.stringify({ userId, balance, points, reason: normalizedReason });
+    if (!requestRef.current || requestRef.current.fingerprint !== fingerprint) {
+      requestRef.current = { fingerprint, id: crypto.randomUUID() };
+    }
+
     setBusy(true);
-    const { error } = await supabase.rpc("admin_master_adjust_user_v1", {
+    const { error } = await supabase.rpc("admin_master_adjust_user_v2", {
       p_user_id: userId,
+      p_client_request_id: requestRef.current.id,
       p_balance_delta: balance,
       p_points_delta: points,
-      p_reason: reason.trim(),
+      p_reason: normalizedReason,
     });
     setBusy(false);
     if (error) {
@@ -231,6 +239,7 @@ function WalletAdjustment({
       return;
     }
 
+    requestRef.current = null;
     setBalanceDelta("0");
     setPointsDelta("0");
     setReason("");

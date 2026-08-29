@@ -1,10 +1,30 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5";
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -41,6 +61,45 @@ export type Database = {
           name?: string;
           slug?: string;
           sort_order?: number;
+        };
+        Relationships: [];
+      };
+      admin_adjustment_requests: {
+        Row: {
+          actor_id: string;
+          balance_delta: number;
+          client_request_id: string;
+          completed_at: string | null;
+          created_at: string;
+          points_delta: number;
+          reason: string;
+          reference_id: string;
+          result: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          balance_delta: number;
+          client_request_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          points_delta: number;
+          reason: string;
+          reference_id?: string;
+          result?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          balance_delta?: number;
+          client_request_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          points_delta?: number;
+          reason?: string;
+          reference_id?: string;
+          result?: Json | null;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -887,6 +946,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      admin_master_adjust_user_v2: {
+        Args: {
+          p_balance_delta?: number;
+          p_client_request_id: string;
+          p_points_delta?: number;
+          p_reason?: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       admin_publish_mystery_v1: {
         Args: { p_mystery_version_id: string };
         Returns: Json;
@@ -1225,6 +1294,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
