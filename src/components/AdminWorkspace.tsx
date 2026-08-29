@@ -661,16 +661,20 @@ export function AdminWorkspace() {
           <RaritiesPanel rarities={math.rarities} />
         )}
       </TabsContent>
-      <TabsContent value="daily">
-        <DailyAdminPanel cards={data.scratchcards} onChanged={refresh} />
-      </TabsContent>
-      <TabsContent value="mystery">
-        <MysteryAdminPanel
-          versions={data.mystery_versions}
-          cards={data.scratchcards}
-          onChanged={refresh}
-        />
-      </TabsContent>
+      {isMaster && (
+        <TabsContent value="daily">
+          <DailyAdminPanel cards={data.scratchcards} onChanged={refresh} />
+        </TabsContent>
+      )}
+      {isMaster && (
+        <TabsContent value="mystery">
+          <MysteryAdminPanel
+            versions={data.mystery_versions}
+            cards={data.scratchcards}
+            onChanged={refresh}
+          />
+        </TabsContent>
+      )}
       <TabsContent value="store">
         <StoreAdminPanel items={data.store_items} onChanged={refresh} />
       </TabsContent>
