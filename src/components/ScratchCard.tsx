@@ -4,12 +4,89 @@ import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/hooks/useProfile";
 
 export type ScratchRarity = "bronze" | "prata" | "ouro" | "diamante";
+export type ScratchVisualRarity = ScratchRarity | "misteriosa";
+
+export const scratchRarityPresentation: Record<
+  ScratchVisualRarity,
+  {
+    surface: string;
+    border: string;
+    glow: string;
+    winSurface: string;
+    optionClass: string;
+    badgeClass: string;
+    iconClass: string;
+    ornamentClass: string;
+    desktopParticles: number;
+  }
+> = {
+  bronze: {
+    surface: "from-amber-900 via-orange-700 to-amber-950",
+    border: "border-amber-700/70",
+    glow: "shadow-[0_10px_28px_rgba(180,83,9,0.28)]",
+    winSurface: "bg-gradient-to-br from-amber-900 via-orange-700 to-amber-950 text-amber-50",
+    optionClass:
+      "border-amber-800/60 bg-gradient-to-br from-amber-950/10 via-card to-orange-950/10",
+    badgeClass: "border-amber-700/40 bg-amber-900/15 text-amber-700 dark:text-amber-300",
+    iconClass: "text-amber-600 dark:text-amber-300",
+    ornamentClass: "from-amber-200/10 via-transparent to-orange-950/20",
+    desktopParticles: 0,
+  },
+  prata: {
+    surface: "from-slate-300 via-zinc-500 to-slate-700",
+    border: "border-slate-300/70",
+    glow: "shadow-[0_10px_30px_rgba(148,163,184,0.28)]",
+    winSurface: "bg-gradient-to-br from-slate-200 via-zinc-400 to-slate-700 text-slate-950",
+    optionClass: "border-slate-400/50 bg-gradient-to-br from-slate-300/10 via-card to-zinc-700/10",
+    badgeClass: "border-slate-400/50 bg-slate-400/15 text-slate-700 dark:text-slate-200",
+    iconClass: "text-slate-500 dark:text-slate-200",
+    ornamentClass: "from-white/25 via-transparent to-slate-900/20",
+    desktopParticles: 2,
+  },
+  ouro: {
+    surface: "from-yellow-300 via-amber-500 to-yellow-700",
+    border: "border-amber-300/80 ring-1 ring-amber-300/30",
+    glow: "shadow-[0_0_36px_rgba(245,158,11,0.34)]",
+    winSurface: "bg-gradient-to-br from-yellow-200 via-amber-400 to-yellow-700 text-amber-950",
+    optionClass:
+      "border-amber-400/60 bg-gradient-to-br from-amber-300/10 via-card to-yellow-700/10 shadow-[0_10px_35px_rgba(245,158,11,0.10)]",
+    badgeClass: "border-amber-400/50 bg-amber-400/15 text-amber-700 dark:text-amber-200",
+    iconClass: "text-amber-500 dark:text-amber-200",
+    ornamentClass: "from-yellow-100/30 via-transparent to-amber-900/20",
+    desktopParticles: 4,
+  },
+  diamante: {
+    surface: "from-cyan-200 via-sky-400 to-indigo-700",
+    border: "border-cyan-200/80 ring-1 ring-cyan-200/40",
+    glow: "shadow-[0_0_42px_rgba(34,211,238,0.34)]",
+    winSurface: "bg-gradient-to-br from-cyan-100 via-sky-300 to-indigo-600 text-slate-950",
+    optionClass:
+      "border-cyan-300/60 bg-gradient-to-br from-cyan-200/10 via-card to-indigo-700/10 shadow-[0_10px_35px_rgba(34,211,238,0.12)]",
+    badgeClass: "border-cyan-300/50 bg-cyan-300/15 text-cyan-700 dark:text-cyan-200",
+    iconClass: "text-cyan-500 dark:text-cyan-200",
+    ornamentClass: "from-white/35 via-cyan-100/10 to-indigo-950/20",
+    desktopParticles: 8,
+  },
+  misteriosa: {
+    surface: "from-violet-950 via-fuchsia-700 to-indigo-950",
+    border: "border-fuchsia-400/70 ring-1 ring-violet-400/40",
+    glow: "shadow-[0_0_44px_rgba(168,85,247,0.38)]",
+    winSurface: "bg-gradient-to-br from-violet-950 via-fuchsia-700 to-indigo-950 text-white",
+    optionClass:
+      "border-fuchsia-500/50 bg-gradient-to-br from-violet-950/20 via-card to-fuchsia-950/20 shadow-[0_12px_40px_rgba(168,85,247,0.16)]",
+    badgeClass: "border-fuchsia-400/50 bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-200",
+    iconClass: "text-fuchsia-500 dark:text-fuchsia-200",
+    ornamentClass: "from-fuchsia-200/25 via-transparent to-violet-950/30",
+    desktopParticles: 6,
+  },
+};
 
 type Props = {
   prize: number;
   pointsEarned: number;
   onReset: () => void;
   rarity: ScratchRarity;
+  visualRarity?: ScratchVisualRarity;
   resetLabel?: string;
 };
 
@@ -18,6 +95,7 @@ export function ScratchCard({
   pointsEarned,
   onReset,
   rarity,
+  visualRarity = rarity,
   resetLabel = "Jogar Novamente",
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -28,6 +106,7 @@ export function ScratchCard({
   const [revealed, setRevealed] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const won = prize > 0 || pointsEarned > 0;
+  const theme = scratchRarityPresentation[visualRarity];
 
   const playRevealSound = () => {
     if (!soundOn || !("AudioContext" in window)) return;
@@ -117,31 +196,55 @@ export function ScratchCard({
     scheduleProgressCheck();
   };
 
-  const theme = {
-    bronze: "from-amber-800 via-orange-700 to-amber-900",
-    prata: "from-slate-400 via-zinc-500 to-slate-700",
-    ouro: "from-amber-300 via-yellow-500 to-amber-700",
-    diamante: "from-cyan-300 via-sky-500 to-indigo-700",
-  }[rarity];
-
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div
-        className={`relative h-[150px] w-full max-w-[300px] overflow-hidden rounded-xl border border-border bg-gradient-to-br ${theme} shadow-lg`}
+        data-testid="scratch-result-card"
+        data-visual-rarity={visualRarity}
+        className={`relative h-[150px] w-full max-w-[300px] overflow-hidden rounded-xl border bg-gradient-to-br ${theme.surface} ${theme.border} ${theme.glow}`}
       >
+        <div
+          aria-hidden
+          data-effect-tier="mobile"
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${theme.ornamentClass}`}
+        />
+        <div
+          aria-hidden
+          data-effect-tier="desktop"
+          className="pointer-events-none absolute -right-10 -top-14 hidden size-32 rotate-12 rounded-[2rem] border border-white/25 bg-white/10 blur-[1px] sm:block"
+        />
+        <div
+          aria-hidden
+          data-effect-tier="desktop"
+          className="pointer-events-none absolute -bottom-16 -left-8 hidden size-28 rotate-45 rounded-[2rem] border border-white/15 bg-black/10 sm:block"
+        />
+
         {revealed && won && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
+            className="pointer-events-none absolute inset-0 z-10 overflow-hidden motion-reduce:hidden"
           >
-            {[...Array(rarity === "diamante" ? 16 : 8)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
               <span
-                key={i}
+                key={`mobile-${i}`}
+                data-effect-tier="mobile"
                 className="absolute size-2 rounded-full bg-white/80 motion-safe:animate-ping"
                 style={{
-                  left: `${(i * 17) % 100}%`,
-                  top: `${(i * 29) % 85}%`,
-                  animationDelay: `${i * 90}ms`,
+                  left: `${(i * 23 + 11) % 92}%`,
+                  top: `${(i * 31 + 9) % 82}%`,
+                  animationDelay: `${i * 100}ms`,
+                }}
+              />
+            ))}
+            {[...Array(theme.desktopParticles)].map((_, i) => (
+              <span
+                key={`desktop-${i}`}
+                data-effect-tier="desktop"
+                className="absolute hidden size-2 rounded-full bg-white/80 motion-safe:animate-ping sm:block"
+                style={{
+                  left: `${(i * 17 + 7) % 94}%`,
+                  top: `${(i * 29 + 5) % 84}%`,
+                  animationDelay: `${(i + 4) * 90}ms`,
                 }}
               />
             ))}
@@ -151,9 +254,7 @@ export function ScratchCard({
           aria-hidden={!revealed}
           aria-live={revealed ? "polite" : undefined}
           className={`absolute inset-0 flex flex-col items-center justify-center gap-1 ${
-            won
-              ? "bg-success text-success-foreground"
-              : "bg-destructive text-destructive-foreground"
+            won ? theme.winSurface : "bg-destructive text-destructive-foreground"
           }`}
         >
           {won ? (

@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScratchCard, type ScratchRarity } from "@/components/ScratchCard";
+import {
+  ScratchCard,
+  scratchRarityPresentation,
+  type ScratchRarity,
+} from "@/components/ScratchCard";
 import { profileQueryKey } from "@/hooks/useProfile";
 import {
   specialScratchStatusQueryKey,
@@ -32,6 +36,8 @@ type MysteryReveal = {
   mathVersionId: string;
   idempotent: boolean;
 };
+
+const mysteryPresentation = scratchRarityPresentation.misteriosa;
 
 function finiteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -280,10 +286,18 @@ export function MysteryScratchPanel() {
   };
 
   return (
-    <Card className="mx-auto max-w-md">
+    <Card
+      data-testid="mystery-panel"
+      className={`mx-auto max-w-md overflow-hidden ${mysteryPresentation.optionClass}`}
+    >
+      <div
+        aria-hidden
+        data-effect-tier="desktop"
+        className={`hidden h-1 bg-gradient-to-r sm:block ${mysteryPresentation.surface}`}
+      />
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-5 text-primary" /> Raspadinha misteriosa
+          <Sparkles className={`size-5 ${mysteryPresentation.iconClass}`} /> Raspadinha misteriosa
         </CardTitle>
         <CardDescription>
           O pool publicado escolhe e persiste a experiência antes da revelação. A jogada usa
@@ -298,6 +312,7 @@ export function MysteryScratchPanel() {
               prize={reveal.prize}
               pointsEarned={reveal.pointsEarned}
               rarity={reveal.rarity}
+              visualRarity="misteriosa"
               onReset={() => setReveal(null)}
               resetLabel="Fechar resultado"
             />
