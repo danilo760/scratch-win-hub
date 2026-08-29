@@ -1288,7 +1288,7 @@ function MysteryAdminPanel({
             <AlertDialogTitle>Publicar pool da Misteriosa?</AlertDialogTitle>
             <AlertDialogDescription>
               Ao confirmar, este DRAFT se torna PUBLISHED e o pool atualmente publicado, se houver,
-              paspa a RETIRED. O pool publicado fica bloqueado para edição.
+              passa a RETIRED. O pool publicado fica bloqueado para edição.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {selected && (
