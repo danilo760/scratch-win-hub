@@ -152,16 +152,17 @@ async function exerciseAuthenticatedViewports(page) {
 }
 
 async function setupMysteryFixture(email, password, userId) {
-  const { data: card, error: cardError } = await admin
-    .from("scratchcards")
-    .select("id, published_version_id")
-    .eq("active", true)
-    .not("published_version_id", "is", null)
+  const { data: publishedVersion, error: versionError } = await admin
+    .from("scratch_math_versions")
+    .select("scratchcard_id")
+    .eq("status", "PUBLISHED")
     .limit(1)
     .single();
-  if (cardError) throw cardError;
-  assert.ok(card?.id, "isolated browser fixture needs an active scratchcard");
-  assert.ok(card.published_version_id, "isolated browser fixture needs published math");
+  if (versionError) throw versionError;
+  assert.ok(
+    publishedVersion?.scratchcard_id,
+    "isolated browser fixture needs a published math version",
+  );
 
   const { error: promoteError } = await admin
     .from("profiles")
@@ -186,7 +187,7 @@ async function setupMysteryFixture(email, password, userId) {
 
     const { error: entryError } = await fixtureAdmin.rpc("admin_add_mystery_entry_v1", {
       p_mystery_version_id: poolId,
-      p_scratchcard_id: card.id,
+      p_scratchcard_id: publishedVersion.scratchcard_id,
       p_weight: 1,
     });
     if (entryError) throw entryError;
