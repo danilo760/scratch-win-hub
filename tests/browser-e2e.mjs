@@ -340,14 +340,11 @@ async function exerciseAdmin(page, userId) {
   await assertNoHorizontalOverflow(page, "admin math audit");
   await page.screenshot({ path: `${artifactDir}/admin-math-audit-1440x900.png`, fullPage: true });
 
-  const adminSections = [
+  const masterOnlyTabs = ["Raspadinhas", "Versões Matemáticas", "Diária", "Misteriosa"];
+  const operationalSections = [
     ["Visão Geral", "Operação de raspadinhas"],
-    ["Raspadinhas", "Cadastros operacionais e versão publicada atual."],
-    ["Versões Matemáticas", "Versões e resultados"],
     ["Resultados", "Resultados matemáticos"],
     ["Raridades", "Raridades"],
-    ["Diária", "Configuração da Diária"],
-    ["Misteriosa", "Pool e pesos"],
     ["Loja", "Itens da loja"],
     ["Resgates", "Resgates"],
     ["Conquistas", "Conquistas"],
@@ -357,7 +354,20 @@ async function exerciseAdmin(page, userId) {
     ["Simulador", "Simulador"],
   ];
 
-  for (const [tabName, evidence] of adminSections) {
+  for (const tabName of masterOnlyTabs) {
+    assert.equal(
+      await adminPanel.getByRole("tab", { name: tabName, exact: true }).count(),
+      0,
+      `common admin should not see master-only tab "${tabName}"`,
+    );
+  }
+  assert.equal(
+    await adminPanel.getByRole("heading", { name: "Administração Master", exact: true }).count(),
+    0,
+    "common admin should not see the master administration section",
+  );
+
+  for (const [tabName, evidence] of operationalSections) {
     await adminPanel.getByRole("tab", { name: tabName, exact: true }).click();
     await adminPanel.getByText(evidence, { exact: true }).first().waitFor({ state: "visible" });
     await assertNoBlankScreen(page, `admin ${tabName}`);
@@ -365,12 +375,12 @@ async function exerciseAdmin(page, userId) {
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await adminPanel.getByRole("tab", { name: "Raspadinhas", exact: true }).click();
+  await adminPanel.getByRole("tab", { name: "Loja", exact: true }).click();
   await adminPanel
-    .getByText("Cadastros operacionais e versão publicada atual.", { exact: true })
+    .getByText("Itens da loja", { exact: true })
     .first()
     .waitFor({ state: "visible" });
-  await assertNoHorizontalOverflow(page, "admin mobile raspadinhas");
+  await assertNoHorizontalOverflow(page, "admin mobile loja");
   await adminPanel.getByRole("tab", { name: "Resgates", exact: true }).click();
   await adminPanel.getByText("Resgates", { exact: true }).first().waitFor({ state: "visible" });
   await assertNoHorizontalOverflow(page, "admin mobile resgates");
