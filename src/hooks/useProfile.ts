@@ -14,6 +14,11 @@ export type Profile = {
 
 export const profileQueryKey = ["profile"] as const;
 
+function parseAdminRole(value: unknown, isAdmin: boolean): AdminRole {
+  if (value === "admin_master" || value === "admin" || value === "user") return value;
+  return isAdmin ? "admin" : "user";
+}
+
 export function useProfile() {
   return useQuery({
     queryKey: profileQueryKey,
@@ -21,21 +26,14 @@ export function useProfile() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return null;
 
-      const [{ data, error }, { data: masterData, error: masterError }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, email, balance, points, is_admin")
-          .eq("id", auth.user.id)
-          .maybeSingle(),
-        supabase.rpc("is_admin_master" as never, { _user_id: auth.user.id } as never),
-      ]);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email, balance, points, is_admin, admin_role")
+        .eq("id", auth.user.id)
+        .maybeSingle();
 
       if (error) throw error;
-      if (masterError) throw masterError;
       if (!data) return null;
-
-      const isMaster = masterData === true;
-      const adminRole: AdminRole = isMaster ? "admin_master" : data.is_admin ? "admin" : "user";
 
       return {
         id: data.id,
@@ -43,7 +41,7 @@ export function useProfile() {
         balance: Number(data.balance),
         points: data.points,
         is_admin: data.is_admin,
-        admin_role: adminRole,
+        admin_role: parseAdminRole(data.admin_role, data.is_admin),
       };
     },
   });

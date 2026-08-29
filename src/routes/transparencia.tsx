@@ -103,7 +103,7 @@ function TransparencyPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-transparency-v1"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_transparency_v1" as never);
+      const { data, error } = await supabase.rpc("get_transparency_v1");
       if (error) throw error;
       return parseTransparency(data);
     },

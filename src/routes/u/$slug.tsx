@@ -19,12 +19,9 @@ type PublicProfile = {
 
 export const Route = createFileRoute("/u/$slug")({
   loader: async ({ params }) => {
-    const { data, error } = await supabase.rpc(
-      "get_public_profile" as never,
-      {
-        p_slug: params.slug,
-      } as never,
-    );
+    const { data, error } = await supabase.rpc("get_public_profile", {
+      p_slug: params.slug,
+    });
     if (error) throw error;
     return data as unknown as PublicProfile | null;
   },

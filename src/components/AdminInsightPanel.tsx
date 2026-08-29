@@ -253,7 +253,7 @@ export function AdminInsightPanel() {
   const dashboardQuery = useQuery({
     queryKey: dashboardQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_dashboard_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_dashboard_v1");
       if (error) throw error;
       return parseDashboard(data);
     },
@@ -261,7 +261,7 @@ export function AdminInsightPanel() {
   const mathQuery = useQuery({
     queryKey: mathConfigQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_math_config_v1");
       if (error) throw error;
       return parseMathConfig(data);
     },
@@ -426,10 +426,9 @@ function MathAuditPanel({
     queryKey: ["math-audit-v1", versionId],
     enabled: Boolean(versionId),
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "get_math_audit_v1" as never,
-        { p_math_version_id: versionId } as never,
-      );
+      const { data, error } = await supabase.rpc("get_math_audit_v1", {
+        p_math_version_id: versionId,
+      });
       if (error) throw error;
       const parsed = parseMathAudit(data);
       if (!parsed) throw new Error("Resposta inválida da auditoria matemática.");

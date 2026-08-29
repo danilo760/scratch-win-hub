@@ -440,6 +440,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          admin_role: string;
           avatar_url: string | null;
           balance: number;
           created_at: string;
@@ -457,6 +458,7 @@ export type Database = {
           xp: number;
         };
         Insert: {
+          admin_role?: string;
           avatar_url?: string | null;
           balance?: number;
           created_at?: string;
@@ -474,6 +476,7 @@ export type Database = {
           xp?: number;
         };
         Update: {
+          admin_role?: string;
           avatar_url?: string | null;
           balance?: number;
           created_at?: string;
@@ -489,77 +492,6 @@ export type Database = {
           show_statistics?: boolean;
           updated_at?: string;
           xp?: number;
-        };
-        Relationships: [];
-      };
-      raffle_tickets: {
-        Row: {
-          id: string;
-          purchased_at: string;
-          raffle_id: string;
-          ticket_number: number;
-          user_id: string;
-        };
-        Insert: {
-          id?: string;
-          purchased_at?: string;
-          raffle_id: string;
-          ticket_number: number;
-          user_id: string;
-        };
-        Update: {
-          id?: string;
-          purchased_at?: string;
-          raffle_id?: string;
-          ticket_number?: number;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "raffle_tickets_raffle_id_fkey";
-            columns: ["raffle_id"];
-            isOneToOne: false;
-            referencedRelation: "raffles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      raffles: {
-        Row: {
-          closed_at: string | null;
-          created_at: string;
-          description: string;
-          id: string;
-          image_url: string | null;
-          status: string;
-          ticket_price: number;
-          title: string;
-          total_tickets: number;
-          winner_ticket: number | null;
-        };
-        Insert: {
-          closed_at?: string | null;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          image_url?: string | null;
-          status?: string;
-          ticket_price: number;
-          title: string;
-          total_tickets: number;
-          winner_ticket?: number | null;
-        };
-        Update: {
-          closed_at?: string | null;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          image_url?: string | null;
-          status?: string;
-          ticket_price?: number;
-          title?: string;
-          total_tickets?: number;
-          winner_ticket?: number | null;
         };
         Relationships: [];
       };
@@ -899,6 +831,16 @@ export type Database = {
         };
         Returns: string;
       };
+      add_math_outcome_v1_master_internal: {
+        Args: {
+          p_math_version_id: string;
+          p_name: string;
+          p_points: number;
+          p_prize: number;
+          p_weight: number;
+        };
+        Returns: string;
+      };
       admin_add_mystery_entry_v1: {
         Args: {
           p_mystery_version_id: string;
@@ -907,8 +849,24 @@ export type Database = {
         };
         Returns: string;
       };
+      admin_add_mystery_entry_v1_master_internal: {
+        Args: {
+          p_mystery_version_id: string;
+          p_scratchcard_id: string;
+          p_weight: number;
+        };
+        Returns: string;
+      };
       admin_clear_daily_scratch_v1: { Args: never; Returns: undefined };
+      admin_clear_daily_scratch_v1_master_internal: {
+        Args: never;
+        Returns: undefined;
+      };
       admin_create_mystery_draft_v1: {
+        Args: { p_name: string };
+        Returns: string;
+      };
+      admin_create_mystery_draft_v1_master_internal: {
         Args: { p_name: string };
         Returns: string;
       };
@@ -916,7 +874,24 @@ export type Database = {
         Args: { p_entry_id: string };
         Returns: undefined;
       };
+      admin_delete_mystery_entry_v1_master_internal: {
+        Args: { p_entry_id: string };
+        Returns: undefined;
+      };
+      admin_master_adjust_user_v1: {
+        Args: {
+          p_balance_delta?: number;
+          p_points_delta?: number;
+          p_reason?: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       admin_publish_mystery_v1: {
+        Args: { p_mystery_version_id: string };
+        Returns: Json;
+      };
+      admin_publish_mystery_v1_master_internal: {
         Args: { p_mystery_version_id: string };
         Returns: Json;
       };
@@ -924,7 +899,19 @@ export type Database = {
         Args: { p_card_id: string };
         Returns: undefined;
       };
+      admin_set_daily_scratch_v1_master_internal: {
+        Args: { p_card_id: string };
+        Returns: undefined;
+      };
+      admin_set_user_role_v1: {
+        Args: { p_role: string; p_user_id: string };
+        Returns: Json;
+      };
       admin_update_mystery_entry_v1: {
+        Args: { p_entry_id: string; p_weight: number };
+        Returns: undefined;
+      };
+      admin_update_mystery_entry_v1_master_internal: {
         Args: { p_entry_id: string; p_weight: number };
         Returns: undefined;
       };
@@ -937,6 +924,16 @@ export type Database = {
         Returns: Json;
       };
       admin_upsert_scratchcard_v1: {
+        Args: {
+          p_active: boolean;
+          p_id?: string;
+          p_is_daily_eligible?: boolean;
+          p_price: number;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      admin_upsert_scratchcard_v1_master_internal: {
         Args: {
           p_active: boolean;
           p_id?: string;
@@ -968,10 +965,6 @@ export type Database = {
         Args: { p_metadata?: Json; p_slug: string; p_user_id: string };
         Returns: undefined;
       };
-      buy_raffle_tickets: {
-        Args: { p_quantity: number; p_raffle_id: string };
-        Returns: Json;
-      };
       claim_daily_scratch_v1: {
         Args: { p_card_id: string; p_client_request_id: string };
         Returns: Json;
@@ -988,7 +981,19 @@ export type Database = {
         };
         Returns: string;
       };
+      create_math_draft_v1_master_internal: {
+        Args: {
+          p_card_id: string;
+          p_rarity_slug: string;
+          p_version_name: string;
+        };
+        Returns: string;
+      };
       delete_math_outcome_v1: {
+        Args: { p_outcome_id: string };
+        Returns: undefined;
+      };
+      delete_math_outcome_v1_master_internal: {
         Args: { p_outcome_id: string };
         Returns: undefined;
       };
@@ -1007,11 +1012,37 @@ export type Database = {
       get_admin_dashboard_v1: { Args: never; Returns: Json };
       get_admin_math_config_v1: { Args: never; Returns: Json };
       get_admin_operations_v1: { Args: never; Returns: Json };
+      get_admin_roles_v1: {
+        Args: never;
+        Returns: {
+          admin_role: string;
+          user_id: string;
+        }[];
+      };
+      get_admin_user_management_v1: {
+        Args: never;
+        Returns: {
+          admin_role: string;
+          balance: number;
+          created_at: string;
+          display_name: string;
+          email: string;
+          is_admin: boolean;
+          points: number;
+          user_id: string;
+        }[];
+      };
       get_math_audit_v1: { Args: { p_math_version_id: string }; Returns: Json };
       get_public_profile: { Args: { p_slug: string }; Returns: Json };
       get_special_scratch_status_v1: { Args: never; Returns: Json };
+      get_transparency_v1: { Args: never; Returns: Json };
       is_admin: { Args: { _user_id: string }; Returns: boolean };
+      is_admin_master: { Args: { _user_id: string }; Returns: boolean };
       open_mystery_scratch_v1: {
+        Args: { p_client_request_id: string };
+        Returns: Json;
+      };
+      play_mystery_scratch_v1: {
         Args: { p_client_request_id: string };
         Returns: Json;
       };
@@ -1028,6 +1059,10 @@ export type Database = {
         Args: { p_math_version_id: string };
         Returns: Json;
       };
+      publish_math_version_v1_master_internal: {
+        Args: { p_math_version_id: string };
+        Returns: Json;
+      };
       redeem_item: { Args: { item_id_param: string }; Returns: Json };
       redeem_reward_v1: {
         Args: { p_client_request_id: string; p_item_id: string };
@@ -1038,6 +1073,16 @@ export type Database = {
         Returns: Json;
       };
       update_math_outcome_v1: {
+        Args: {
+          p_name: string;
+          p_outcome_id: string;
+          p_points: number;
+          p_prize: number;
+          p_weight: number;
+        };
+        Returns: undefined;
+      };
+      update_math_outcome_v1_master_internal: {
         Args: {
           p_name: string;
           p_outcome_id: string;
