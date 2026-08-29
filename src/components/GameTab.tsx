@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScratchCard, type ScratchRarity } from "@/components/ScratchCard";
+import { MysteryScratchPanel } from "@/components/SpecialScratchPanels";
 import { formatBRL, profileQueryKey, useProfileUpdater } from "@/hooks/useProfile";
 
 type ResultType = "none" | "points" | "credits" | "combined";
@@ -185,49 +186,55 @@ export function GameTab() {
 
   if (!cards.length) {
     return (
-      <p className="py-16 text-center text-muted-foreground">
-        Nenhuma raspadinha com matemática publicada está disponível.
-      </p>
+      <div className="space-y-6">
+        <MysteryScratchPanel />
+        <p className="py-16 text-center text-muted-foreground">
+          Nenhuma raspadinha com matemática publicada está disponível.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((card) => (
-        <Card key={card.id} className="group relative overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Ticket className="size-5 text-accent" />
-              {card.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
-              <Badge variant="secondary" className="capitalize">
-                {card.rarity_name}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Resultado calculado pela versão matemática publicada antes da revelação.
-            </p>
-            <Button
-              variant="glow"
-              className="w-full"
-              disabled={playingId === card.id}
-              onClick={() => play(card.id, card.title)}
-            >
-              {playingId === card.id ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" /> Processando...
-                </>
-              ) : (
-                "Comprar e Jogar"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-6">
+      <MysteryScratchPanel />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => (
+          <Card key={card.id} className="group relative overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Ticket className="size-5 text-accent" />
+                {card.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
+                <Badge variant="secondary" className="capitalize">
+                  {card.rarity_name}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Resultado calculado pela versão matemática publicada antes da revelação.
+              </p>
+              <Button
+                variant="glow"
+                className="w-full"
+                disabled={playingId === card.id}
+                onClick={() => play(card.id, card.title)}
+              >
+                {playingId === card.id ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Processando...
+                  </>
+                ) : (
+                  "Comprar e Jogar"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
