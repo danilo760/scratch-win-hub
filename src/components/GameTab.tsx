@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Ticket, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw, Sparkles, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -123,7 +123,12 @@ export function GameTab() {
   const [result, setResult] = useState<(PlayResult & { title: string }) | null>(null);
   const pendingRequestIds = useRef(new Map<string, string>());
 
-  const { data: cards = [], isLoading } = useQuery({
+  const {
+    data: cards = [],
+    isLoading,
+    error: cardsError,
+    refetch: refetchCards,
+  } = useQuery({
     queryKey: ["active-scratchcards"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_active_scratchcards_v1");
@@ -185,8 +190,33 @@ export function GameTab() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <Card aria-busy="true">
+        <CardContent className="flex min-h-44 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
+          <Loader2 className="size-6 animate-spin" />
+          <span>Carregando raspadinhas disponíveis…</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (cardsError) {
+    return (
+      <div className="space-y-6">
+        <MysteryScratchPanel />
+        <Card className="border-destructive/30">
+          <CardContent className="flex min-h-44 flex-col items-center justify-center gap-3 p-6 text-center">
+            <AlertTriangle className="size-7 text-destructive" aria-hidden="true" />
+            <div className="space-y-1">
+              <strong className="block">Não foi possível carregar as raspadinhas.</strong>
+              <p role="alert" className="text-sm text-muted-foreground">
+                O catálogo não foi tratado como vazio porque a consulta falhou. Tente novamente.
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => void refetchCards()}>
+              <RefreshCw className="size-4" /> Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -195,9 +225,17 @@ export function GameTab() {
     return (
       <div className="space-y-6">
         <MysteryScratchPanel />
-        <p className="py-16 text-center text-muted-foreground">
-          Nenhuma raspadinha com matemática publicada está disponível.
-        </p>
+        <Card>
+          <CardContent className="flex min-h-44 flex-col items-center justify-center gap-3 p-6 text-center">
+            <Ticket className="size-8 text-muted-foreground" aria-hidden="true" />
+            <div className="space-y-1">
+              <strong className="block">Nenhuma raspadinha disponível agora.</strong>
+              <p className="max-w-md text-sm text-muted-foreground">
+                Não há raspadinhas ativas com matemática publicada neste momento.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
