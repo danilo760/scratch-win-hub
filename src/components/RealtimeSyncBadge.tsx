@@ -110,7 +110,11 @@ export function RealtimeSyncBadge({ userId }: Props) {
         ? "Conectando atualizações em tempo real"
         : "Atualizações em tempo real indisponíveis";
   const text =
-    status === "live" ? "Ao vivo" : status === "connecting" ? "Conectando" : "Offline";
+    status === "live"
+      ? "Ao vivo"
+      : status === "connecting"
+        ? "Conectando"
+        : "Offline";
   const dotClass =
     status === "live"
       ? "bg-success"
