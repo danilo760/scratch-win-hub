@@ -89,3 +89,23 @@ test("production hardening records scratch movements and rejects invalid redempt
   assert.match(migration, /Transição de status inválida/);
   assert.match(migration, /grant execute on function public\.is_admin\(uuid\) to authenticated/i);
 });
+
+test("Mystery frontend settles the persisted selection and the database pins its math version", async () => {
+  const [panel, migration] = await Promise.all([
+    read("src/components/SpecialScratchPanels.tsx"),
+    read("supabase/migrations/20260829003324_complete_mystery_settlement_v1.sql"),
+  ]);
+
+  assert.match(panel, /open_mystery_scratch_v1/);
+  assert.match(panel, /play_mystery_scratch_v1/);
+  assert.match(panel, /parsed\.mathVersionId !== opening\.mathVersionId/);
+  assert.match(panel, /setReveal\(parsed\)/);
+  assert.match(migration, /where id = v_open\.math_version_id/);
+  assert.match(migration, /status not in \('PUBLISHED', 'RETIRED'\)/);
+  assert.match(migration, /v_open\.math_version_id,\s*p_client_request_id/);
+  assert.match(migration, /'mystery'/);
+  assert.match(
+    migration,
+    /revoke execute on function public\.play_mystery_scratch_v1\(uuid\) from public, anon/i,
+  );
+});

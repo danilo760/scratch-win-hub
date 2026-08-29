@@ -20,6 +20,19 @@ type DailyReveal = {
   alreadyClaimed: boolean;
 };
 
+type MysteryOpening = {
+  mathVersionId: string;
+};
+
+type MysteryReveal = {
+  prize: number;
+  pointsEarned: number;
+  rarity: ScratchRarity;
+  cardTitle: string;
+  mathVersionId: string;
+  idempotent: boolean;
+};
+
 function finiteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) {
@@ -48,6 +61,43 @@ function parseDailyReveal(value: unknown): DailyReveal | null {
     rarity,
     cardTitle: typeof raw["card_title"] === "string" ? raw["card_title"] : null,
     alreadyClaimed: raw["already_claimed"] === true,
+  };
+}
+
+function parseMysteryOpening(value: unknown): MysteryOpening | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const mathVersionId = raw["math_version_id"];
+  if (typeof mathVersionId !== "string" || !mathVersionId) return null;
+  return { mathVersionId };
+}
+
+function parseMysteryReveal(value: unknown): MysteryReveal | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const prize = finiteNumber(raw["prize"]);
+  const pointsEarned = finiteNumber(raw["points_earned"]);
+  const rarity = parseScratchRarity(raw["rarity_slug"]);
+  const cardTitle = raw["card_title"];
+  const mathVersionId = raw["math_version_id"];
+  if (
+    prize === null ||
+    pointsEarned === null ||
+    !rarity ||
+    typeof cardTitle !== "string" ||
+    !cardTitle ||
+    typeof mathVersionId !== "string" ||
+    !mathVersionId
+  ) {
+    return null;
+  }
+  return {
+    prize,
+    pointsEarned,
+    rarity,
+    cardTitle,
+    mathVersionId,
+    idempotent: raw["idempotent"] === true,
   };
 }
 
@@ -161,17 +211,43 @@ export function DailyScratchPanel() {
 }
 
 export function MysteryScratchPanel() {
+  const qc = useQueryClient();
   const { data: status, isLoading } = useSpecialScratchStatus();
   const [busy, setBusy] = useState(false);
+  const [reveal, setReveal] = useState<MysteryReveal | null>(null);
   const pendingRequestId = useRef<string | null>(null);
 
   const open = async () => {
     if (!status?.mystery_available || busy) return;
     setBusy(true);
     pendingRequestId.current ??= crypto.randomUUID();
-    const { data, error } = await supabase.rpc("open_mystery_scratch_v1", {
-      p_client_request_id: pendingRequestId.current,
-    });
+    const requestId = pendingRequestId.current;
+
+    const { data: openingData, error: openingError } = await supabase.rpc(
+      "open_mystery_scratch_v1",
+      { p_client_request_id: requestId },
+    );
+
+    if (openingError) {
+      setBusy(false);
+      toast.error(openingError.message);
+      return;
+    }
+
+    const opening = parseMysteryOpening(openingData);
+    if (!opening) {
+      setBusy(false);
+      toast.error("O servidor retornou uma seleção misteriosa inválida. Tente novamente.");
+      return;
+    }
+
+    // The database migration adds play_mystery_scratch_v1 with the same UUID -> JSON
+    // contract as open_mystery_scratch_v1. Keep the assertion only until generated
+    // Supabase types are regenerated from the migrated database.
+    const { data, error } = await supabase.rpc(
+      "play_mystery_scratch_v1" as "open_mystery_scratch_v1",
+      { p_client_request_id: requestId },
+    );
     setBusy(false);
 
     if (error) {
@@ -179,13 +255,28 @@ export function MysteryScratchPanel() {
       return;
     }
 
-    if (!data || typeof data !== "object") {
-      toast.error("O servidor retornou uma resposta misteriosa inválida. Tente novamente.");
+    const parsed = parseMysteryReveal(data);
+    if (!parsed) {
+      toast.error("O servidor retornou um resultado misterioso inválido. Tente novamente.");
+      return;
+    }
+
+    if (parsed.mathVersionId !== opening.mathVersionId) {
+      toast.error("A versão matemática da Misteriosa não corresponde à seleção persistida.");
       return;
     }
 
     pendingRequestId.current = null;
-    toast.success("Raspadinha misteriosa selecionada com segurança.");
+    setReveal(parsed);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: profileQueryKey }),
+      qc.invalidateQueries({ queryKey: specialScratchStatusQueryKey }),
+    ]);
+    toast.success(
+      parsed.idempotent
+        ? "Resultado misterioso recuperado com segurança."
+        : "Misteriosa registrada. Raspe para revelar o resultado.",
+    );
   };
 
   return (
@@ -195,11 +286,23 @@ export function MysteryScratchPanel() {
           <Sparkles className="size-5 text-primary" /> Raspadinha misteriosa
         </CardTitle>
         <CardDescription>
-          O pool publicado escolhe a experiência antes de qualquer revelação visual.
+          O pool publicado escolhe e persiste a experiência antes da revelação. A jogada usa
+          exatamente a versão matemática selecionada.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {isLoading ? (
+        {reveal ? (
+          <div className="space-y-3">
+            <p className="text-center text-sm font-medium">{reveal.cardTitle}</p>
+            <ScratchCard
+              prize={reveal.prize}
+              pointsEarned={reveal.pointsEarned}
+              rarity={reveal.rarity}
+              onReset={() => setReveal(null)}
+              resetLabel="Fechar resultado"
+            />
+          </div>
+        ) : isLoading ? (
           <Loader2 className="mx-auto animate-spin" />
         ) : status?.mystery_available ? (
           <>
