@@ -8,7 +8,7 @@ values
 ('41414141-4141-4141-8141-414141414141','authenticated','authenticated','special-regular@example.invalid','{}','{"display_name":"Special Regular"}',now(),now()),
 ('42424242-4242-4242-8242-424242424242','authenticated','authenticated','special-admin@example.invalid','{}','{"display_name":"Special Admin"}',now(),now());
 
-update public.profiles set is_admin=true where id='42424242-4242-4242-8242-424242424242';
+update public.profiles set admin_role='admin_master' where id='42424242-4242-4242-8242-424242424242';
 
 insert into public.scratchcards(id,title,price,active,is_daily_eligible)
 values
@@ -204,6 +204,6 @@ begin
 end $$;
 reset role;
 
-select extensions.pass('daily and mystery contracts enforce server selection, Sao Paulo daily state, idempotency, fractional weights, single published pool, retirement immutability, and admin authorization');
+select extensions.pass('daily and mystery contracts enforce server selection, Sao Paulo daily state, idempotency, fractional weights, single published pool, retirement immutability, and admin-master authorization');
 select * from extensions.finish();
 rollback;

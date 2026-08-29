@@ -40,7 +40,7 @@ set balance = 2
 where id = '81818181-8181-4181-8181-818181818181';
 
 update public.profiles
-set is_admin = true
+set admin_role = 'admin_master'
 where id = '82828282-8282-4282-8282-828282828282';
 
 insert into public.scratchcards(id,title,price,active,is_daily_eligible)

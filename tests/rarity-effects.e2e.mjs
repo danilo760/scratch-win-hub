@@ -77,7 +77,7 @@ try {
 
   const { error: profileError } = await admin
     .from("profiles")
-    .update({ balance: 100, points: 2_000, is_admin: true })
+    .update({ balance: 100, points: 2_000, admin_role: "admin_master" })
     .eq("id", userId);
   if (profileError) throw profileError;
 
@@ -116,7 +116,7 @@ try {
 
   const { error: demoteError } = await admin
     .from("profiles")
-    .update({ is_admin: false })
+    .update({ admin_role: "user" })
     .eq("id", userId);
   if (demoteError) throw demoteError;
 

@@ -1,12 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AdminRole = "user" | "admin" | "admin_master";
+
 export type Profile = {
   id: string;
   email: string | null;
   balance: number;
   points: number;
   is_admin: boolean;
+  admin_role: AdminRole;
 };
 
 export const profileQueryKey = ["profile"] as const;
@@ -17,19 +20,30 @@ export function useProfile() {
     queryFn: async (): Promise<Profile | null> => {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return null;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, email, balance, points, is_admin")
-        .eq("id", auth.user.id)
-        .maybeSingle();
+
+      const [{ data, error }, { data: masterData, error: masterError }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, email, balance, points, is_admin")
+          .eq("id", auth.user.id)
+          .maybeSingle(),
+        supabase.rpc("is_admin_master" as never, { _user_id: auth.user.id } as never),
+      ]);
+
       if (error) throw error;
+      if (masterError) throw masterError;
       if (!data) return null;
+
+      const isMaster = masterData === true;
+      const adminRole: AdminRole = isMaster ? "admin_master" : data.is_admin ? "admin" : "user";
+
       return {
         id: data.id,
         email: data.email ?? auth.user.email ?? null,
         balance: Number(data.balance),
         points: data.points,
         is_admin: data.is_admin,
+        admin_role: adminRole,
       };
     },
   });

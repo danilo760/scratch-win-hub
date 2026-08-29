@@ -7,7 +7,7 @@ insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,cr
 values
 ('31313131-3131-4131-8131-313131313131','authenticated','authenticated','math-regular@example.invalid','{}','{"display_name":"Math Regular"}',now(),now()),
 ('32323232-3232-4232-8232-323232323232','authenticated','authenticated','math-admin-crud@example.invalid','{}','{"display_name":"Math CRUD Admin"}',now(),now());
-update public.profiles set is_admin=true where id='32323232-3232-4232-8232-323232323232';
+update public.profiles set admin_role='admin_master' where id='32323232-3232-4232-8232-323232323232';
 
 insert into public.scratchcards(id,title,price,active)
 values ('33333333-4444-4333-8333-444444444444','Math CRUD fixture',2,true);
@@ -119,6 +119,6 @@ end $$;
 
 reset role;
 
-select extensions.pass('math admin CRUD is admin-only, uses the admin RPC surface for DRAFT data, locks PUBLISHED outcomes, and exposes simulator/audit');
+select extensions.pass('math admin CRUD is admin-master-only, uses the admin RPC surface for DRAFT data, locks PUBLISHED outcomes, and exposes simulator/audit');
 select * from extensions.finish();
 rollback;

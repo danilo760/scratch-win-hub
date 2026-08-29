@@ -9,7 +9,7 @@ values
 ('11111111-1111-4111-8111-111111111111','authenticated','authenticated','phase15-a@example.invalid','{}','{"display_name":"Usuário A"}',now(),now()),
 ('22222222-2222-4222-8222-222222222222','authenticated','authenticated','phase15-b@example.invalid','{}','{"display_name":"Usuário B"}',now(),now()),
 ('33333333-3333-4333-8333-333333333333','authenticated','authenticated','phase15-admin@example.invalid','{}','{"display_name":"Admin Teste"}',now(),now());
-update public.profiles set is_admin=true where id='33333333-3333-4333-8333-333333333333';
+update public.profiles set admin_role='admin_master' where id='33333333-3333-4333-8333-333333333333';
 
 -- Deterministic card: every result is +5 points, no credits.
 insert into public.scratchcards (id,title,price,active,is_daily_eligible)
@@ -97,7 +97,7 @@ do $$ begin
 end $$;
 reset role;
 
--- Admin publishes the mystery pool.
+-- Admin Master publishes the mystery pool.
 select set_config('request.jwt.claims','{"sub":"33333333-3333-4333-8333-333333333333","role":"authenticated"}',true);
 set local role authenticated;
 do $$ declare r jsonb; begin

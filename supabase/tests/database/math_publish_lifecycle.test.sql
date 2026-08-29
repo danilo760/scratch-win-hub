@@ -10,7 +10,7 @@ values (
   '{"display_name":"Math Admin"}',now(),now()
 );
 update public.profiles
-set is_admin=true
+set admin_role='admin_master'
 where id='13131313-1313-4313-8313-131313131313';
 
 insert into public.scratchcards(id,title,price,active)
