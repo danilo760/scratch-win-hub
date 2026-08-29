@@ -74,10 +74,7 @@ try {
     .eq("id", master.id);
   assert.ifError(result.error);
 
-  result = await admin
-    .from("profiles")
-    .update({ balance: 25, points: 100 })
-    .eq("id", target.id);
+  result = await admin.from("profiles").update({ balance: 25, points: 100 }).eq("id", target.id);
   assert.ifError(result.error);
 
   const browser = await chromium.launch({ headless: true });
@@ -104,7 +101,10 @@ try {
     await roleSelect.waitFor({ state: "visible" });
     assert.equal(await roleSelect.inputValue(), "user", "target must begin as a regular user");
     await roleSelect.selectOption("admin");
-    await roleSelect.locator("..").getByRole("button", { name: "Salvar papel", exact: true }).click();
+    await roleSelect
+      .locator("..")
+      .getByRole("button", { name: "Salvar papel", exact: true })
+      .click();
 
     let dialog = page.getByRole("alertdialog");
     await dialog.waitFor({ state: "visible" });
@@ -128,9 +128,7 @@ try {
     await adminPanel.locator("#master-adjust-reason").fill("Browser confirmation gate");
 
     const before = await readWallet(target.id);
-    await adminPanel
-      .getByRole("button", { name: "Aplicar ajuste auditado", exact: true })
-      .click();
+    await adminPanel.getByRole("button", { name: "Aplicar ajuste auditado", exact: true }).click();
 
     dialog = page.getByRole("alertdialog");
     await dialog.waitFor({ state: "visible" });
@@ -138,7 +136,9 @@ try {
       .getByRole("heading", { name: "Confirmar ajuste administrativo?", exact: true })
       .waitFor({ state: "visible" });
     await dialog.getByText("Confirmation Target", { exact: true }).waitFor({ state: "visible" });
-    await dialog.getByText("Browser confirmation gate", { exact: true }).waitFor({ state: "visible" });
+    await dialog
+      .getByText("Browser confirmation gate", { exact: true })
+      .waitFor({ state: "visible" });
 
     const beforeConfirmation = await readWallet(target.id);
     assert.deepEqual(
@@ -152,9 +152,7 @@ try {
     const afterCancel = await readWallet(target.id);
     assert.deepEqual(afterCancel, before, "cancelled wallet adjustment mutated the target");
 
-    await adminPanel
-      .getByRole("button", { name: "Aplicar ajuste auditado", exact: true })
-      .click();
+    await adminPanel.getByRole("button", { name: "Aplicar ajuste auditado", exact: true }).click();
     dialog = page.getByRole("alertdialog");
     await dialog.waitFor({ state: "visible" });
     await dialog.getByRole("button", { name: "Confirmar ajuste", exact: true }).click();
@@ -164,7 +162,11 @@ try {
     await dialog.waitFor({ state: "hidden", timeout: 10_000 });
 
     const after = await readWallet(target.id);
-    assert.equal(after.balance, before.balance + 1.25, "confirmed credit delta was not applied once");
+    assert.equal(
+      after.balance,
+      before.balance + 1.25,
+      "confirmed credit delta was not applied once",
+    );
     assert.equal(after.points, before.points + 7, "confirmed points delta was not applied once");
     assert.equal(after.adminRole, "user", "wallet adjustment changed the target role");
 
@@ -175,7 +177,11 @@ try {
       .eq("transaction_type", "ADMIN_ADJUSTMENT")
       .contains("metadata", { reason: "Browser confirmation gate" });
     assert.ifError(creditError);
-    assert.equal(creditEntries, 1, "confirmed adjustment did not create exactly one credit ledger row");
+    assert.equal(
+      creditEntries,
+      1,
+      "confirmed adjustment did not create exactly one credit ledger row",
+    );
 
     const { count: pointsEntries, error: pointsError } = await admin
       .from("points_ledger")
@@ -184,9 +190,17 @@ try {
       .eq("transaction_type", "ADMIN_ADJUSTMENT")
       .contains("metadata", { reason: "Browser confirmation gate" });
     assert.ifError(pointsError);
-    assert.equal(pointsEntries, 1, "confirmed adjustment did not create exactly one points ledger row");
+    assert.equal(
+      pointsEntries,
+      1,
+      "confirmed adjustment did not create exactly one points ledger row",
+    );
 
-    assert.deepEqual(pageErrors, [], `Admin Master confirmation flow emitted page errors: ${pageErrors.join(" | ")}`);
+    assert.deepEqual(
+      pageErrors,
+      [],
+      `Admin Master confirmation flow emitted page errors: ${pageErrors.join(" | ")}`,
+    );
     assert.deepEqual(
       consoleErrors,
       [],

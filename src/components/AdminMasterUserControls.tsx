@@ -247,7 +247,11 @@ function RoleRow({ user, onChanged }: { user: MasterUser; onChanged: () => Promi
               Cancelar
             </AlertDialogCancel>
             <Button onClick={() => void save()} disabled={busy}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} {" "}
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="size-4" />
+              )}{" "}
               Confirmar papel
             </Button>
           </AlertDialogFooter>
@@ -436,13 +440,16 @@ function WalletAdjustment({
                 </strong>
                 {selectedUser && Number.isFinite(balancePreview) && (
                   <span className="text-xs text-muted-foreground">
-                    {formatBRL(selectedUser.balance)} → {formatBRL(selectedUser.balance + balancePreview)}
+                    {formatBRL(selectedUser.balance)} →{" "}
+                    {formatBRL(selectedUser.balance + balancePreview)}
                   </span>
                 )}
               </div>
               <div className="rounded-md border bg-background p-2">
                 <span className="text-xs text-muted-foreground">Pontos</span>
-                <strong className="block">{Number.isFinite(pointsPreview) ? pointsPreview : pointsDelta}</strong>
+                <strong className="block">
+                  {Number.isFinite(pointsPreview) ? pointsPreview : pointsDelta}
+                </strong>
                 {selectedUser && Number.isFinite(pointsPreview) && (
                   <span className="text-xs text-muted-foreground">
                     {selectedUser.points} → {selectedUser.points + pointsPreview}
