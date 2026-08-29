@@ -6,7 +6,7 @@ import { formatBRL } from "@/hooks/useProfile";
 export type ScratchRarity = "bronze" | "prata" | "ouro" | "diamante";
 export type ScratchVisualRarity = ScratchRarity | "misteriosa";
 
-export const scratchRarityPresentation: Record<
+const scratchRarityPresentation: Record<
   ScratchVisualRarity,
   {
     surface: string;
