@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MathAdminPanel } from "@/components/MathAdminPanel";
-import { formatBRL } from "@/hooks/useProfile";
+import { formatBRL, useProfile, type AdminRole } from "@/hooks/useProfile";
 import { specialScratchStatusQueryKey } from "@/hooks/useSpecialScratchStatus";
 
 const adminOperationsQueryKey = ["admin-operations"] as const;
@@ -99,6 +99,7 @@ type UserAdmin = {
   xp: number;
   level: number;
   is_admin: boolean;
+  admin_role: AdminRole;
   created_at: string;
 };
 
@@ -326,6 +327,19 @@ function parseAchievement(value: unknown): AchievementAdmin | null {
   };
 }
 
+function parseAdminRole(value: unknown, isAdmin: boolean): AdminRole {
+  if (value === "admin_master") return "admin_master";
+  if (value === "admin") return "admin";
+  if (value === "user") return "user";
+  return isAdmin ? "admin" : "user";
+}
+
+const adminRoleLabel: Record<AdminRole, string> = {
+  user: "Usuário",
+  admin: "Admin",
+  admin_master: "Admin Master",
+};
+
 function parseUser(value: unknown): UserAdmin | null {
   const raw = asRecord(value);
   if (!raw) return null;
@@ -358,6 +372,7 @@ function parseUser(value: unknown): UserAdmin | null {
     xp,
     level,
     is_admin: raw.is_admin === true,
+    admin_role: parseAdminRole(raw.admin_role, raw.is_admin === true),
     created_at: createdAt,
   };
 }
@@ -550,6 +565,8 @@ function shortId(value: string): string {
 
 export function AdminWorkspace() {
   const qc = useQueryClient();
+  const { data: profile } = useProfile();
+  const isMaster = profile?.admin_role === "admin_master";
   const operationsQuery = useQuery({
     queryKey: adminOperationsQueryKey,
     queryFn: async () => {
@@ -598,12 +615,12 @@ export function AdminWorkspace() {
     <Tabs defaultValue="overview" className="space-y-4">
       <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto p-1">
         <AdminTrigger value="overview" label="Visão Geral" />
-        <AdminTrigger value="scratchcards" label="Raspadinhas" />
-        <AdminTrigger value="math" label="Versões Matemáticas" />
+        {isMaster && <AdminTrigger value="scratchcards" label="Raspadinhas" />}
+        {isMaster && <AdminTrigger value="math" label="Versões Matemáticas" />}
         <AdminTrigger value="outcomes" label="Resultados" />
         <AdminTrigger value="rarities" label="Raridades" />
-        <AdminTrigger value="daily" label="Diária" />
-        <AdminTrigger value="mystery" label="Misteriosa" />
+        {isMaster && <AdminTrigger value="daily" label="Diária" />}
+        {isMaster && <AdminTrigger value="mystery" label="Misteriosa" />}
         <AdminTrigger value="store" label="Loja" />
         <AdminTrigger value="redemptions" label="Resgates" />
         <AdminTrigger value="achievements" label="Conquistas" />
@@ -616,12 +633,16 @@ export function AdminWorkspace() {
       <TabsContent value="overview">
         <OverviewPanel data={data} onRefresh={refresh} />
       </TabsContent>
-      <TabsContent value="scratchcards">
-        <ScratchcardsPanel cards={data.scratchcards} onChanged={refresh} />
-      </TabsContent>
-      <TabsContent value="math">
-        <MathAdminPanel />
-      </TabsContent>
+      {isMaster && (
+        <TabsContent value="scratchcards">
+          <ScratchcardsPanel cards={data.scratchcards} onChanged={refresh} />
+        </TabsContent>
+      )}
+      {isMaster && (
+        <TabsContent value="math">
+          <MathAdminPanel />
+        </TabsContent>
+      )}
       <TabsContent value="outcomes">
         {mathQuery.error ? (
           <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
@@ -640,16 +661,20 @@ export function AdminWorkspace() {
           <RaritiesPanel rarities={math.rarities} />
         )}
       </TabsContent>
-      <TabsContent value="daily">
-        <DailyAdminPanel cards={data.scratchcards} onChanged={refresh} />
-      </TabsContent>
-      <TabsContent value="mystery">
-        <MysteryAdminPanel
-          versions={data.mystery_versions}
-          cards={data.scratchcards}
-          onChanged={refresh}
-        />
-      </TabsContent>
+      {isMaster && (
+        <TabsContent value="daily">
+          <DailyAdminPanel cards={data.scratchcards} onChanged={refresh} />
+        </TabsContent>
+      )}
+      {isMaster && (
+        <TabsContent value="mystery">
+          <MysteryAdminPanel
+            versions={data.mystery_versions}
+            cards={data.scratchcards}
+            onChanged={refresh}
+          />
+        </TabsContent>
+      )}
       <TabsContent value="store">
         <StoreAdminPanel items={data.store_items} onChanged={refresh} />
       </TabsContent>
@@ -1691,8 +1716,8 @@ function UsersPanel({ users }: { users: UserAdmin[] }) {
                 <td className="p-2">{user.xp}</td>
                 <td className="p-2">{user.level}</td>
                 <td className="p-2">
-                  <Badge variant={user.is_admin ? "default" : "outline"}>
-                    {user.is_admin ? "Admin" : "Usuário"}
+                  <Badge variant={user.admin_role === "user" ? "outline" : "default"}>
+                    {adminRoleLabel[user.admin_role]}
                   </Badge>
                 </td>
               </tr>
