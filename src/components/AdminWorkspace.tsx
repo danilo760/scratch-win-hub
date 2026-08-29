@@ -327,6 +327,19 @@ function parseAchievement(value: unknown): AchievementAdmin | null {
   };
 }
 
+function parseAdminRole(value: unknown, isAdmin: boolean): AdminRole {
+  if (value === "admin_master") return "admin_master";
+  if (value === "admin") return "admin";
+  if (value === "user") return "user";
+  return isAdmin ? "admin" : "user";
+}
+
+const adminRoleLabel: Record<AdminRole, string> = {
+  user: "Usuário",
+  admin: "Admin",
+  admin_master: "Admin Master",
+};
+
 function parseUser(value: unknown): UserAdmin | null {
   const raw = asRecord(value);
   if (!raw) return null;
