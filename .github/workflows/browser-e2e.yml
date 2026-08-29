@@ -123,6 +123,9 @@ jobs:
       - name: Run Realtime visual sync
         run: node tests/realtime-visual-sync.e2e.mjs
 
+      - name: Run Admin math confirmation gates
+        run: node tests/admin-math-confirmations.e2e.mjs
+
       - name: Collect application log
         if: always()
         run: |

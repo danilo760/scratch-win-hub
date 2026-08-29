@@ -3,6 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calculator, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,6 +165,7 @@ export function MathAdminPanel() {
   const [raritySlug, setRaritySlug] = useState("bronze");
   const [creating, setCreating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const mathQuery = useQuery({
     queryKey: mathConfigQueryKey,
@@ -185,6 +195,9 @@ export function MathAdminPanel() {
   }, [data.versions, selectedVersionId]);
 
   const selected = data.versions.find((version) => version.id === selectedVersionId) ?? null;
+  const selectedCard = selected
+    ? (data.cards.find((card) => card.id === selected.scratchcard_id) ?? null)
+    : null;
   const totalWeight = selected?.outcomes.reduce((total, outcome) => total + outcome.weight, 0) ?? 0;
   const expectedPrize =
     selected && totalWeight > 0
@@ -237,6 +250,7 @@ export function MathAdminPanel() {
       qc.invalidateQueries({ queryKey: ["active-scratchcards"] }),
       qc.invalidateQueries({ queryKey: ["home-scratchcards"] }),
     ]);
+    setPublishConfirmOpen(false);
     toast.success("Versão publicada e bloqueada para edição.");
   };
 
@@ -382,7 +396,7 @@ export function MathAdminPanel() {
                   <Button
                     variant="glow"
                     className="w-full"
-                    onClick={publish}
+                    onClick={() => setPublishConfirmOpen(true)}
                     disabled={publishing || selected.outcomes.length === 0 || totalWeight <= 0}
                   >
                     {publishing ? (
@@ -400,6 +414,50 @@ export function MathAdminPanel() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (!publishing) setPublishConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publicar versão matemática?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao confirmar, esta DRAFT se torna PUBLISHED e a versão atualmente publicada desta
+              raspadinha, se houver, passa a RETIRED. A versão publicada fica bloqueada para edição.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {selected && (
+            <div className="space-y-2 rounded-lg border bg-secondary/20 p-3 text-sm">
+              <strong className="block">
+                {selectedCard?.title ?? "Raspadinha"} — {selected.version_name}
+              </strong>
+              <p className="text-muted-foreground">
+                {selected.rarity_name ?? selected.rarity_slug ?? "Sem raridade"} ·{" "}
+                {selected.outcomes.length} outcome(s)
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <span>Peso total: {totalWeight.toLocaleString("pt-BR")}</span>
+                <span>Créditos esperados: {expectedPrize.toFixed(4)}</span>
+                <span>Pontos esperados: {expectedPoints.toFixed(4)}</span>
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishing}>Cancelar</AlertDialogCancel>
+            <Button onClick={() => void publish()} disabled={publishing}>
+              {publishing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}{" "}
+              Confirmar publicação
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -429,6 +487,7 @@ function OutcomeRow({
   const [points, setPoints] = useState(String(outcome.points));
   const [weight, setWeight] = useState(String(outcome.weight));
   const [busy, setBusy] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const probability = totalWeight > 0 ? (outcome.weight / totalWeight) * 100 : 0;
 
   useEffect(() => {
@@ -465,70 +524,103 @@ function OutcomeRow({
       return;
     }
     await onChanged();
+    setRemoveConfirmOpen(false);
     toast.success("Outcome removido.");
   };
 
   return (
-    <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-      <Input
-        aria-label="Nome do outcome"
-        value={name}
-        disabled={readOnly}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <Input
-        aria-label="Prêmio em créditos"
-        type="number"
-        min="0"
-        step="0.01"
-        value={prize}
-        disabled={readOnly}
-        onChange={(e) => setPrize(e.target.value)}
-      />
-      <Input
-        aria-label="Pontos"
-        type="number"
-        min="0"
-        step="1"
-        value={points}
-        disabled={readOnly}
-        onChange={(e) => setPoints(e.target.value)}
-      />
-      <div className="space-y-1">
+    <>
+      <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
         <Input
-          aria-label="Peso"
-          type="number"
-          min="0.0001"
-          step="0.0001"
-          value={weight}
+          aria-label="Nome do outcome"
+          value={name}
           disabled={readOnly}
-          onChange={(e) => setWeight(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
-        <p className="text-center text-[11px] text-muted-foreground">{probability.toFixed(4)}%</p>
-      </div>
-      {!readOnly && (
-        <div className="flex gap-1">
-          <Button
-            size="icon"
-            variant="outline"
-            disabled={busy}
-            onClick={save}
-            aria-label="Salvar outcome"
-          >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="destructive"
-            disabled={busy}
-            onClick={remove}
-            aria-label="Remover outcome"
-          >
-            <Trash2 className="size-4" />
-          </Button>
+        <Input
+          aria-label="Prêmio em créditos"
+          type="number"
+          min="0"
+          step="0.01"
+          value={prize}
+          disabled={readOnly}
+          onChange={(e) => setPrize(e.target.value)}
+        />
+        <Input
+          aria-label="Pontos"
+          type="number"
+          min="0"
+          step="1"
+          value={points}
+          disabled={readOnly}
+          onChange={(e) => setPoints(e.target.value)}
+        />
+        <div className="space-y-1">
+          <Input
+            aria-label="Peso"
+            type="number"
+            min="0.0001"
+            step="0.0001"
+            value={weight}
+            disabled={readOnly}
+            onChange={(e) => setWeight(e.target.value)}
+          />
+          <p className="text-center text-[11px] text-muted-foreground">{probability.toFixed(4)}%</p>
         </div>
-      )}
-    </div>
+        {!readOnly && (
+          <div className="flex gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              disabled={busy}
+              onClick={save}
+              aria-label="Salvar outcome"
+            >
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            </Button>
+            <Button
+              size="icon"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => setRemoveConfirmOpen(true)}
+              aria-label="Remover outcome"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <AlertDialog
+        open={removeConfirmOpen}
+        onOpenChange={(open) => {
+          if (!busy) setRemoveConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover outcome do DRAFT?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove o outcome do rascunho e altera a composição matemática que poderá ser
+              publicada. Revise os dados antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border bg-secondary/20 p-3 text-sm">
+            <strong className="block">{outcome.name}</strong>
+            <p className="mt-1 text-muted-foreground">
+              Prêmio: {outcome.prize} · Pontos: {outcome.points} · Peso: {outcome.weight}
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}{" "}
+              Confirmar remoção
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
