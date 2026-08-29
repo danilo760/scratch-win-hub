@@ -52,7 +52,10 @@ async function rpc(client, name, args) {
 const target = await createUser("adjust-target");
 const master = await createUser("adjust-master");
 
-let result = await service.from("profiles").update({ admin_role: "admin_master" }).eq("id", master.id);
+let result = await service
+  .from("profiles")
+  .update({ admin_role: "admin_master" })
+  .eq("id", master.id);
 assert.ifError(result.error);
 
 const masterClient = await signedInClient(master.email);
@@ -69,8 +72,16 @@ const responses = await Promise.all(
   Array.from({ length: 20 }, () => rpc(masterClient, "admin_master_adjust_user_v2", args)),
 );
 
-assert.equal(new Set(responses.map((row) => row.reference_id)).size, 1, "Retry created multiple references");
-assert.equal(new Set(responses.map((row) => JSON.stringify(row))).size, 1, "Retry response changed");
+assert.equal(
+  new Set(responses.map((row) => row.reference_id)).size,
+  1,
+  "Retry created multiple references",
+);
+assert.equal(
+  new Set(responses.map((row) => JSON.stringify(row))).size,
+  1,
+  "Retry response changed",
+);
 
 const mismatch = await masterClient.rpc("admin_master_adjust_user_v2", {
   ...args,
@@ -123,7 +134,10 @@ const { count: auditCount, error: auditCountError } = await service
 assert.ifError(auditCountError);
 assert.equal(auditCount, 1, "Concurrent retries created multiple audit events");
 
-const directRead = await masterClient.from("admin_adjustment_requests").select("client_request_id").limit(1);
+const directRead = await masterClient
+  .from("admin_adjustment_requests")
+  .select("client_request_id")
+  .limit(1);
 assert.ok(directRead.error, "Admin Master can read internal idempotency rows directly");
 
 console.log("ADMIN_MASTER_ADJUSTMENT_CONCURRENCY_SUITE_PASSED");
