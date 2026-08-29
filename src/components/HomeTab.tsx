@@ -36,7 +36,13 @@ function parseHighlightCards(value: unknown): HighlightCard[] {
 
 export function HomeTab({ onNavigate }: Props) {
   const { data: profile } = useProfile();
-  const { data: specialStatus, isLoading: specialLoading } = useSpecialScratchStatus();
+  const {
+    data: specialStatus,
+    isLoading: specialLoading,
+    isFetching: specialFetching,
+    error: specialError,
+    refetch: refetchSpecialStatus,
+  } = useSpecialScratchStatus();
   const { data: cards = [] } = useQuery({
     queryKey: ["home-scratchcards"],
     queryFn: async () => {
@@ -55,22 +61,48 @@ export function HomeTab({ onNavigate }: Props) {
   });
 
   const isAdmin = profile?.admin_role === "admin" || profile?.admin_role === "admin_master";
+  const specialFailed = Boolean(specialError);
 
-  const dailyDescription = specialStatus?.daily_claimed_today
-    ? "Sua cortesia de hoje já foi utilizada. Você ainda pode consultar o resultado do dia."
-    : specialStatus?.daily_available
-      ? "Uma cortesia por dia, escolhida e validada diretamente no servidor."
-      : "Configuração pendente. A cortesia diária ficará disponível quando for publicada.";
+  const dailyDescription = specialLoading
+    ? "Verificando a disponibilidade da cortesia diária…"
+    : specialFailed
+      ? "Não foi possível verificar a disponibilidade da cortesia diária."
+      : specialStatus?.daily_claimed_today
+        ? "Sua cortesia de hoje já foi utilizada. Você ainda pode consultar o resultado do dia."
+        : specialStatus?.daily_available
+          ? "Uma cortesia por dia, escolhida e validada diretamente no servidor."
+          : "Configuração pendente. A cortesia diária ficará disponível quando for publicada.";
 
-  const dailyButtonLabel = specialStatus?.daily_claimed_today
-    ? "Ver resultado de hoje"
-    : specialStatus?.daily_available
-      ? "Ver raspadinha diária"
-      : "Em breve";
+  const dailyButtonLabel = specialFailed
+    ? specialFetching
+      ? "Tentando novamente…"
+      : "Tentar novamente"
+    : specialStatus?.daily_claimed_today
+      ? "Ver resultado de hoje"
+      : specialStatus?.daily_available
+        ? "Ver raspadinha diária"
+        : "Em breve";
 
   const canOpenDaily =
     !specialLoading &&
+    !specialFailed &&
     Boolean(specialStatus?.daily_available || specialStatus?.daily_claimed_today);
+
+  const handleDailyAction = () => {
+    if (specialFailed) {
+      void refetchSpecialStatus();
+      return;
+    }
+    onNavigate("daily");
+  };
+
+  const handleMysteryAction = () => {
+    if (specialFailed) {
+      void refetchSpecialStatus();
+      return;
+    }
+    onNavigate("mystery");
+  };
 
   return (
     <div className="space-y-6 pb-6">
@@ -89,7 +121,7 @@ export function HomeTab({ onNavigate }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="border-accent/40">
+      <Card className={specialFailed ? "border-destructive/30" : "border-accent/40"}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-accent" /> Raspadinha diária
@@ -97,13 +129,24 @@ export function HomeTab({ onNavigate }: Props) {
           <CardDescription>{dailyDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {!specialLoading && specialStatus?.daily_claimed_today && (
+          {specialFailed && (
+            <Badge variant="outline" className="border-destructive/40 text-destructive">
+              Erro ao verificar disponibilidade
+            </Badge>
+          )}
+          {!specialLoading && !specialFailed && specialStatus?.daily_claimed_today && (
             <Badge variant="secondary">Já utilizada hoje</Badge>
           )}
           {!specialLoading &&
+            !specialFailed &&
             !specialStatus?.daily_claimed_today &&
             !specialStatus?.daily_configured && <Badge variant="secondary">Em breve</Badge>}
-          <Button className="w-full" disabled={!canOpenDaily} onClick={() => onNavigate("daily")}>
+          <Button
+            className="w-full"
+            variant={specialFailed ? "outline" : "default"}
+            disabled={specialFailed ? specialFetching : !canOpenDaily}
+            onClick={handleDailyAction}
+          >
             {dailyButtonLabel}
           </Button>
         </CardContent>
@@ -133,28 +176,45 @@ export function HomeTab({ onNavigate }: Props) {
         </div>
       </section>
 
-      <Card>
+      <Card className={specialFailed ? "border-destructive/30" : undefined}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-primary" /> Raspadinha misteriosa
           </CardTitle>
           <CardDescription>
-            {specialStatus?.mystery_available
-              ? "O pool publicado seleciona a experiência antes da revelação."
-              : "Nenhum pool misterioso está publicado no momento."}
+            {specialLoading
+              ? "Verificando o pool misterioso publicado…"
+              : specialFailed
+                ? "Não foi possível verificar a disponibilidade da raspadinha misteriosa."
+                : specialStatus?.mystery_available
+                  ? "O pool publicado seleciona a experiência antes da revelação."
+                  : "Nenhum pool misterioso está publicado no momento."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {!specialLoading && !specialStatus?.mystery_available && (
-            <Badge variant="secondary">Em breve</Badge>
+          {specialFailed ? (
+            <Badge variant="outline" className="border-destructive/40 text-destructive">
+              Erro ao verificar disponibilidade
+            </Badge>
+          ) : (
+            !specialLoading &&
+            !specialStatus?.mystery_available && <Badge variant="secondary">Em breve</Badge>
           )}
           <Button
             variant="outline"
             className="w-full"
-            disabled={specialLoading || !specialStatus?.mystery_available}
-            onClick={() => onNavigate("mystery")}
+            disabled={
+              specialFailed ? specialFetching : specialLoading || !specialStatus?.mystery_available
+            }
+            onClick={handleMysteryAction}
           >
-            {specialStatus?.mystery_available ? "Abrir misteriosa" : "Em breve"}
+            {specialFailed
+              ? specialFetching
+                ? "Tentando novamente…"
+                : "Tentar novamente"
+              : specialStatus?.mystery_available
+                ? "Abrir misteriosa"
+                : "Em breve"}
           </Button>
         </CardContent>
       </Card>
