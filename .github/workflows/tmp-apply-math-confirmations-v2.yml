@@ -1,0 +1,233 @@
+name: Temporary Apply Math Confirmations V2
+
+on:
+  push:
+    branches: [codex/confirm-math-admin-actions]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/confirm-math-admin-actions
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Apply targeted confirmation UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/components/MathAdminPanel.tsx")
+          source = path.read_text()
+
+          def replace_once(old: str, new: str) -> None:
+              global source
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected exactly one source block, found {count}:\n{old}")
+              source = source.replace(old, new, 1)
+
+          replace_once(
+              'import { supabase } from "@/integrations/supabase/client";\nimport { Badge } from "@/components/ui/badge";',
+              'import { supabase } from "@/integrations/supabase/client";\n'
+              'import {\n'
+              '  AlertDialog,\n'
+              '  AlertDialogCancel,\n'
+              '  AlertDialogContent,\n'
+              '  AlertDialogDescription,\n'
+              '  AlertDialogFooter,\n'
+              '  AlertDialogHeader,\n'
+              '  AlertDialogTitle,\n'
+              '} from "@/components/ui/alert-dialog";\n'
+              'import { Badge } from "@/components/ui/badge";',
+          )
+
+          replace_once(
+              '  const [creating, setCreating] = useState(false);\n  const [publishing, setPublishing] = useState(false);',
+              '  const [creating, setCreating] = useState(false);\n'
+              '  const [publishing, setPublishing] = useState(false);\n'
+              '  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);',
+          )
+
+          replace_once(
+              '  const selected = data.versions.find((version) => version.id === selectedVersionId) ?? null;\n'
+              '  const totalWeight = selected?.outcomes.reduce((total, outcome) => total + outcome.weight, 0) ?? 0;',
+              '  const selected = data.versions.find((version) => version.id === selectedVersionId) ?? null;\n'
+              '  const selectedCard = selected\n'
+              '    ? (data.cards.find((card) => card.id === selected.scratchcard_id) ?? null)\n'
+              '    : null;\n'
+              '  const totalWeight = selected?.outcomes.reduce((total, outcome) => total + outcome.weight, 0) ?? 0;',
+          )
+
+          replace_once(
+              '    ]);\n    toast.success("Versão publicada e bloqueada para edição.");',
+              '    ]);\n    setPublishConfirmOpen(false);\n'
+              '    toast.success("Versão publicada e bloqueada para edição.");',
+          )
+
+          replace_once(
+              '                    onClick={publish}\n'
+              '                    disabled={publishing || selected.outcomes.length === 0 || totalWeight <= 0}',
+              '                    onClick={() => setPublishConfirmOpen(true)}\n'
+              '                    disabled={publishing || selected.outcomes.length === 0 || totalWeight <= 0}',
+          )
+
+          main_end = '''      </Card>
+    </div>
+  );
+}
+
+function Metric'''
+          main_replacement = '''      </Card>
+
+      <AlertDialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (!publishing) setPublishConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publicar versão matemática?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao confirmar, esta DRAFT se torna PUBLISHED e a versão atualmente publicada desta
+              raspadinha, se houver, passa a RETIRED. A versão publicada fica bloqueada para edição.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {selected && (
+            <div className="space-y-2 rounded-lg border bg-secondary/20 p-3 text-sm">
+              <strong className="block">
+                {selectedCard?.title ?? "Raspadinha"} — {selected.version_name}
+              </strong>
+              <p className="text-muted-foreground">
+                {selected.rarity_name ?? selected.rarity_slug ?? "Sem raridade"} ·{" "}
+                {selected.outcomes.length} outcome(s)
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <span>Peso total: {totalWeight.toLocaleString("pt-BR")}</span>
+                <span>Créditos esperados: {expectedPrize.toFixed(4)}</span>
+                <span>Pontos esperados: {expectedPoints.toFixed(4)}</span>
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishing}>Cancelar</AlertDialogCancel>
+            <Button onClick={() => void publish()} disabled={publishing}>
+              {publishing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}{" "}
+              Confirmar publicação
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function Metric'''
+          replace_once(main_end, main_replacement)
+
+          replace_once(
+              '  const [weight, setWeight] = useState(String(outcome.weight));\n'
+              '  const [busy, setBusy] = useState(false);\n'
+              '  const probability = totalWeight > 0 ? (outcome.weight / totalWeight) * 100 : 0;',
+              '  const [weight, setWeight] = useState(String(outcome.weight));\n'
+              '  const [busy, setBusy] = useState(false);\n'
+              '  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);\n'
+              '  const probability = totalWeight > 0 ? (outcome.weight / totalWeight) * 100 : 0;',
+          )
+
+          replace_once(
+              '    await onChanged();\n    toast.success("Outcome removido.");',
+              '    await onChanged();\n    setRemoveConfirmOpen(false);\n    toast.success("Outcome removido.");',
+          )
+
+          replace_once(
+              '            onClick={remove}\n            aria-label="Remover outcome"',
+              '            onClick={() => setRemoveConfirmOpen(true)}\n            aria-label="Remover outcome"',
+          )
+
+          replace_once(
+              '  return (\n    <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">',
+              '  return (\n    <>\n      <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">',
+          )
+
+          row_end = '''      )}
+    </div>
+  );
+}
+
+function NewOutcome'''
+          row_replacement = '''      )}
+      </div>
+
+      <AlertDialog
+        open={removeConfirmOpen}
+        onOpenChange={(open) => {
+          if (!busy) setRemoveConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover outcome do DRAFT?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove o outcome do rascunho e altera a composição matemática que poderá ser
+              publicada. Revise os dados antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border bg-secondary/20 p-3 text-sm">
+            <strong className="block">{outcome.name}</strong>
+            <p className="mt-1 text-muted-foreground">
+              Prêmio: {outcome.prize} · Pontos: {outcome.points} · Peso: {outcome.weight}
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}{" "}
+              Confirmar remoção
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function NewOutcome'''
+          replace_once(row_end, row_replacement)
+
+          path.write_text(source)
+          PY
+
+      - name: Format changed files
+        run: bunx prettier --write src/components/MathAdminPanel.tsx tests/admin-math-confirmations.e2e.mjs
+
+      - name: Remove temporary workflow
+        run: git rm .github/workflows/tmp-apply-math-confirmations-v2.yml
+
+      - name: Commit patch and cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/MathAdminPanel.tsx tests/admin-math-confirmations.e2e.mjs .github/workflows/tmp-apply-math-confirmations-v2.yml
+          git commit -m "feat: confirm irreversible math admin actions"
+          git push origin HEAD:codex/confirm-math-admin-actions
