@@ -160,7 +160,7 @@ export function MathAdminPanel() {
   const mathQuery = useQuery({
     queryKey: mathConfigQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_math_config_v1");
       if (error) throw error;
       return parseMathConfig(data);
     },
@@ -205,14 +205,11 @@ export function MathAdminPanel() {
       return;
     }
     setCreating(true);
-    const { data: id, error } = await supabase.rpc(
-      "create_math_draft_v1" as never,
-      {
-        p_card_id: cardId,
-        p_version_name: versionName.trim(),
-        p_rarity_slug: raritySlug,
-      } as never,
-    );
+    const { data: id, error } = await supabase.rpc("create_math_draft_v1", {
+      p_card_id: cardId,
+      p_version_name: versionName.trim(),
+      p_rarity_slug: raritySlug,
+    });
     setCreating(false);
     if (error) {
       toast.error(error.message);
@@ -227,10 +224,9 @@ export function MathAdminPanel() {
   const publish = async () => {
     if (!selected || selected.status !== "DRAFT") return;
     setPublishing(true);
-    const { error } = await supabase.rpc(
-      "publish_math_version_v1" as never,
-      { p_math_version_id: selected.id } as never,
-    );
+    const { error } = await supabase.rpc("publish_math_version_v1", {
+      p_math_version_id: selected.id,
+    });
     setPublishing(false);
     if (error) {
       toast.error(error.message);
@@ -444,16 +440,13 @@ function OutcomeRow({
 
   const save = async () => {
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "update_math_outcome_v1" as never,
-      {
-        p_outcome_id: outcome.id,
-        p_name: name,
-        p_prize: Number(prize),
-        p_points: Number(points),
-        p_weight: Number(weight),
-      } as never,
-    );
+    const { error } = await supabase.rpc("update_math_outcome_v1", {
+      p_outcome_id: outcome.id,
+      p_name: name,
+      p_prize: Number(prize),
+      p_points: Number(points),
+      p_weight: Number(weight),
+    });
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -465,10 +458,7 @@ function OutcomeRow({
 
   const remove = async () => {
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "delete_math_outcome_v1" as never,
-      { p_outcome_id: outcome.id } as never,
-    );
+    const { error } = await supabase.rpc("delete_math_outcome_v1", { p_outcome_id: outcome.id });
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -563,16 +553,13 @@ function NewOutcome({
   const add = async () => {
     if (!canSave) return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "add_math_outcome_v1" as never,
-      {
-        p_math_version_id: versionId,
-        p_name: name.trim(),
-        p_prize: Number(prize),
-        p_points: Number(points),
-        p_weight: Number(weight),
-      } as never,
-    );
+    const { error } = await supabase.rpc("add_math_outcome_v1", {
+      p_math_version_id: versionId,
+      p_name: name.trim(),
+      p_prize: Number(prize),
+      p_points: Number(points),
+      p_weight: Number(weight),
+    });
     setBusy(false);
     if (error) {
       toast.error(error.message);

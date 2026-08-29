@@ -63,7 +63,7 @@ export function AdminMasterUserControls() {
   const usersQuery = useQuery({
     queryKey: masterUsersQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_user_management_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_user_management_v1");
       if (error) throw error;
       return parseMasterUsers(data);
     },
@@ -140,10 +140,10 @@ function RoleRow({ user, onChanged }: { user: MasterUser; onChanged: () => Promi
   const save = async () => {
     if (role === user.admin_role) return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_set_user_role_v1" as never,
-      { p_user_id: user.user_id, p_role: role } as never,
-    );
+    const { error } = await supabase.rpc("admin_set_user_role_v1", {
+      p_user_id: user.user_id,
+      p_role: role,
+    });
     setBusy(false);
     if (error) {
       setRole(user.admin_role);
@@ -219,15 +219,12 @@ function WalletAdjustment({
     }
 
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_master_adjust_user_v1" as never,
-      {
-        p_user_id: userId,
-        p_balance_delta: balance,
-        p_points_delta: points,
-        p_reason: reason.trim(),
-      } as never,
-    );
+    const { error } = await supabase.rpc("admin_master_adjust_user_v1", {
+      p_user_id: userId,
+      p_balance_delta: balance,
+      p_points_delta: points,
+      p_reason: reason.trim(),
+    });
     setBusy(false);
     if (error) {
       toast.error(error.message);

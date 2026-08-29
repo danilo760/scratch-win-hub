@@ -553,10 +553,10 @@ function toLocalInput(value: string | null): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function fromLocalInput(value: string): string | null {
-  if (!value) return null;
+function fromLocalInput(value: string): string | undefined {
+  if (!value) return undefined;
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 function shortId(value: string): string {
@@ -570,7 +570,7 @@ export function AdminWorkspace() {
   const operationsQuery = useQuery({
     queryKey: adminOperationsQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_operations_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_operations_v1");
       if (error) throw error;
       return parseAdminOperations(data);
     },
@@ -579,7 +579,7 @@ export function AdminWorkspace() {
   const mathQuery = useQuery({
     queryKey: adminMathQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
+      const { data, error } = await supabase.rpc("get_admin_math_config_v1");
       if (error) throw error;
       return parseMathSnapshot(data);
     },
@@ -856,16 +856,13 @@ function ScratchcardsPanel({
       return;
     }
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_upsert_scratchcard_v1" as never,
-      {
-        p_id: editing?.id ?? null,
-        p_title: title.trim(),
-        p_price: parsedPrice,
-        p_active: active,
-        p_is_daily_eligible: daily,
-      } as never,
-    );
+    const { error } = await supabase.rpc("admin_upsert_scratchcard_v1", {
+      ...(editing?.id ? { p_id: editing.id } : {}),
+      p_title: title.trim(),
+      p_price: parsedPrice,
+      p_active: active,
+      p_is_daily_eligible: daily,
+    });
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -1037,10 +1034,9 @@ function DailyAdminPanel({
 
   const save = async () => {
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_set_daily_scratch_v1" as never,
-      { p_card_id: selected || null } as never,
-    );
+    const { error } = selected
+      ? await supabase.rpc("admin_set_daily_scratch_v1", { p_card_id: selected })
+      : await supabase.rpc("admin_clear_daily_scratch_v1");
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -1110,10 +1106,9 @@ function MysteryAdminPanel({
   const create = async () => {
     if (!name.trim()) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc(
-      "admin_create_mystery_draft_v1" as never,
-      { p_name: name.trim() } as never,
-    );
+    const { data, error } = await supabase.rpc("admin_create_mystery_draft_v1", {
+      p_name: name.trim(),
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     setName("");
@@ -1133,14 +1128,11 @@ function MysteryAdminPanel({
     )
       return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_add_mystery_entry_v1" as never,
-      {
-        p_mystery_version_id: selected.id,
-        p_scratchcard_id: cardId,
-        p_weight: parsedWeight,
-      } as never,
-    );
+    const { error } = await supabase.rpc("admin_add_mystery_entry_v1", {
+      p_mystery_version_id: selected.id,
+      p_scratchcard_id: cardId,
+      p_weight: parsedWeight,
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
@@ -1150,10 +1142,9 @@ function MysteryAdminPanel({
   const publish = async () => {
     if (!selected || selected.status !== "DRAFT") return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_publish_mystery_v1" as never,
-      { p_mystery_version_id: selected.id } as never,
-    );
+    const { error } = await supabase.rpc("admin_publish_mystery_v1", {
+      p_mystery_version_id: selected.id,
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
@@ -1271,10 +1262,10 @@ function MysteryEntryRow({
     const parsed = Number(weight);
     if (!Number.isFinite(parsed) || parsed <= 0) return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_update_mystery_entry_v1" as never,
-      { p_entry_id: entry.id, p_weight: parsed } as never,
-    );
+    const { error } = await supabase.rpc("admin_update_mystery_entry_v1", {
+      p_entry_id: entry.id,
+      p_weight: parsed,
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
@@ -1282,10 +1273,7 @@ function MysteryEntryRow({
   };
   const remove = async () => {
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_delete_mystery_entry_v1" as never,
-      { p_entry_id: entry.id } as never,
-    );
+    const { error } = await supabase.rpc("admin_delete_mystery_entry_v1", { p_entry_id: entry.id });
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
@@ -1389,24 +1377,21 @@ function StoreAdminPanel({
       return;
     }
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_upsert_store_item_v1" as never,
-      {
-        p_id: editing?.id ?? null,
-        p_title: title.trim(),
-        p_description: description.trim() || null,
-        p_points_cost: cost,
-        p_stock_total: total,
-        p_stock_available: available,
-        p_per_user_limit: perUser,
-        p_category: category.trim() || null,
-        p_starts_at: fromLocalInput(startsAt),
-        p_ends_at: fromLocalInput(endsAt),
-        p_display_order: order,
-        p_image_url: imageUrl.trim() || null,
-        p_active: active,
-      } as never,
-    );
+    const { error } = await supabase.rpc("admin_upsert_store_item_v1", {
+      ...(editing?.id ? { p_id: editing.id } : {}),
+      ...(description.trim() ? { p_description: description.trim() } : {}),
+      ...(category.trim() ? { p_category: category.trim() } : {}),
+      ...(imageUrl.trim() ? { p_image_url: imageUrl.trim() } : {}),
+      ...(fromLocalInput(startsAt) ? { p_starts_at: fromLocalInput(startsAt)! } : {}),
+      ...(fromLocalInput(endsAt) ? { p_ends_at: fromLocalInput(endsAt)! } : {}),
+      p_title: title.trim(),
+      p_points_cost: cost,
+      p_stock_total: total,
+      p_stock_available: available,
+      p_per_user_limit: perUser,
+      p_display_order: order,
+      p_active: active,
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     reset();
@@ -1595,14 +1580,11 @@ function RedemptionRow({
   const update = async () => {
     if (!status) return;
     setBusy(true);
-    const { error } = await supabase.rpc(
-      "admin_update_redemption_v1" as never,
-      {
-        p_redemption_id: redemption.id,
-        p_status: status,
-        p_fulfillment_code: code.trim() || null,
-      } as never,
-    );
+    const { error } = await supabase.rpc("admin_update_redemption_v1", {
+      p_redemption_id: redemption.id,
+      p_status: status,
+      ...(code.trim() ? { p_fulfillment_code: code.trim() } : {}),
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
@@ -1836,10 +1818,10 @@ function SimulatorPanel({
     if (!versionId) return;
     setBusy(true);
     setResult(null);
-    const { data, error } = await supabase.rpc(
-      "simulate_math_v1" as never,
-      { p_math_version_id: versionId, p_simulations: Number(simulations) } as never,
-    );
+    const { data, error } = await supabase.rpc("simulate_math_v1", {
+      p_math_version_id: versionId,
+      p_simulations: Number(simulations),
+    });
     setBusy(false);
     if (error) return void toast.error(error.message);
     const parsed = parseSimulatorResult(data);
