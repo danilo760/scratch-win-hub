@@ -25,7 +25,8 @@ export const scratchRarityPresentation: Record<
     border: "border-amber-700/70",
     glow: "shadow-[0_10px_28px_rgba(180,83,9,0.28)]",
     winSurface: "bg-gradient-to-br from-amber-900 via-orange-700 to-amber-950 text-amber-50",
-    optionClass: "border-amber-800/60 bg-gradient-to-br from-amber-950/10 via-card to-orange-950/10",
+    optionClass:
+      "border-amber-800/60 bg-gradient-to-br from-amber-950/10 via-card to-orange-950/10",
     badgeClass: "border-amber-700/40 bg-amber-900/15 text-amber-700 dark:text-amber-300",
     iconClass: "text-amber-600 dark:text-amber-300",
     ornamentClass: "from-amber-200/10 via-transparent to-orange-950/20",
