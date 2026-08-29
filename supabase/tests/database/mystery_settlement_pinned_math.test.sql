@@ -173,6 +173,18 @@ begin
   );
   perform public.publish_math_version_v1(v2);
   update mystery_pinned_ids set v2_id = v2;
+end $$;
+
+reset role;
+
+do $$
+declare
+  v2 uuid;
+begin
+  select v2_id
+  into v2
+  from mystery_pinned_ids
+  limit 1;
 
   if not exists(
     select 1
@@ -192,8 +204,6 @@ begin
     raise exception 'V2 should be PUBLISHED before settlement';
   end if;
 end $$;
-
-reset role;
 
 select set_config(
   'request.jwt.claims',
