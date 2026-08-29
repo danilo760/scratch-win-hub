@@ -165,11 +165,7 @@ export function HomeTab({ onNavigate }: Props) {
             <CardContent className="p-4">
               <ShieldCheck className="size-5 text-primary" />
               <strong className="mt-2 block">Painel administrativo</strong>
-              <Button
-                variant="link"
-                className="h-auto px-0"
-                onClick={() => onNavigate("admin")}
-              >
+              <Button variant="link" className="h-auto px-0" onClick={() => onNavigate("admin")}>
                 Abrir painel
               </Button>
             </CardContent>
