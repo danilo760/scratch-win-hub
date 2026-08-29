@@ -95,14 +95,11 @@ try {
   assert.ok(newCardId, "admin_upsert_scratchcard_v1 did not return a card id");
   cardId = newCardId;
 
-  const { data: newVersionId, error: draftError } = await fixtureAdmin.rpc(
-    "create_math_draft_v1",
-    {
-      p_card_id: cardId,
-      p_version_name: `CONFIRM-${suffix}`,
-      p_rarity_slug: "bronze",
-    },
-  );
+  const { data: newVersionId, error: draftError } = await fixtureAdmin.rpc("create_math_draft_v1", {
+    p_card_id: cardId,
+    p_version_name: `CONFIRM-${suffix}`,
+    p_rarity_slug: "bronze",
+  });
   assert.ifError(draftError);
   assert.ok(newVersionId, "create_math_draft_v1 did not return a version id");
   versionId = newVersionId;
@@ -170,7 +167,11 @@ try {
   await dialog.getByRole("button", { name: "Confirmar remoção", exact: true }).click();
   await page.getByText("Outcome removido.", { exact: true }).waitFor({ state: "visible" });
   await dialog.waitFor({ state: "hidden" });
-  assert.equal(await countOutcomes(versionId), 1, "confirmed removal did not remove exactly one outcome");
+  assert.equal(
+    await countOutcomes(versionId),
+    1,
+    "confirmed removal did not remove exactly one outcome",
+  );
 
   const publishButton = adminPanel.getByRole("button", { name: "Publicar versão", exact: true });
   await publishButton.click();
@@ -179,11 +180,19 @@ try {
   await dialog
     .getByRole("heading", { name: "Publicar versão matemática?", exact: true })
     .waitFor({ state: "visible" });
-  assert.equal((await readVersion(versionId)).status, "DRAFT", "opening publish confirmation changed status");
+  assert.equal(
+    (await readVersion(versionId)).status,
+    "DRAFT",
+    "opening publish confirmation changed status",
+  );
 
   await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
   await dialog.waitFor({ state: "hidden" });
-  assert.equal((await readVersion(versionId)).status, "DRAFT", "cancelled publication changed status");
+  assert.equal(
+    (await readVersion(versionId)).status,
+    "DRAFT",
+    "cancelled publication changed status",
+  );
 
   await publishButton.click();
   dialog = page.getByRole("alertdialog");
@@ -207,7 +216,11 @@ try {
   assert.ifError(publishedCountError);
   assert.equal(publishedForCard, 1, "card must have exactly one published math version");
 
-  assert.deepEqual(pageErrors, [], `math confirmation flow emitted page errors: ${pageErrors.join(" | ")}`);
+  assert.deepEqual(
+    pageErrors,
+    [],
+    `math confirmation flow emitted page errors: ${pageErrors.join(" | ")}`,
+  );
   assert.deepEqual(
     consoleErrors,
     [],
