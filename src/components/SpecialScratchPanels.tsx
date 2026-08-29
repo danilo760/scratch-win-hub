@@ -107,13 +107,7 @@ function parseMysteryReveal(value: unknown): MysteryReveal | null {
   };
 }
 
-function StatusQueryError({
-  onRetry,
-  retrying,
-}: {
-  onRetry: () => void;
-  retrying: boolean;
-}) {
+function StatusQueryError({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
       <AlertTriangle className="size-6 text-destructive" aria-hidden="true" />
@@ -124,11 +118,7 @@ function StatusQueryError({
         </p>
       </div>
       <Button variant="outline" disabled={retrying} onClick={onRetry}>
-        {retrying ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <RefreshCw className="size-4" />
-        )}{" "}
+        {retrying ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}{" "}
         {retrying ? "Tentando novamente…" : "Tentar novamente"}
       </Button>
     </div>
