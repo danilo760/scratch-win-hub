@@ -559,7 +559,7 @@ export function AdminWorkspace() {
     },
   });
   const { data, isLoading, error } = operationsQuery;
-  const { data: math = { versions: [], rarities: [] } } = useQuery({
+  const mathQuery = useQuery({
     queryKey: adminMathQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_admin_math_config_v1" as never);
@@ -567,6 +567,7 @@ export function AdminWorkspace() {
       return parseMathSnapshot(data);
     },
   });
+  const math = mathQuery.data ?? { versions: [], rarities: [] };
 
   const refresh = async () => {
     await Promise.all([
@@ -622,10 +623,22 @@ export function AdminWorkspace() {
         <MathAdminPanel />
       </TabsContent>
       <TabsContent value="outcomes">
-        <OutcomesPanel versions={math.versions} cards={data.scratchcards} />
+        {mathQuery.error ? (
+          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
+        ) : mathQuery.isLoading ? (
+          <AdminMathLoadingState />
+        ) : (
+          <OutcomesPanel versions={math.versions} cards={data.scratchcards} />
+        )}
       </TabsContent>
       <TabsContent value="rarities">
-        <RaritiesPanel rarities={math.rarities} />
+        {mathQuery.error ? (
+          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
+        ) : mathQuery.isLoading ? (
+          <AdminMathLoadingState />
+        ) : (
+          <RaritiesPanel rarities={math.rarities} />
+        )}
       </TabsContent>
       <TabsContent value="daily">
         <DailyAdminPanel cards={data.scratchcards} onChanged={refresh} />
@@ -656,7 +669,13 @@ export function AdminWorkspace() {
         <AuditPanel logs={data.audit_logs} />
       </TabsContent>
       <TabsContent value="simulator">
-        <SimulatorPanel versions={math.versions} cards={data.scratchcards} />
+        {mathQuery.error ? (
+          <AdminMathErrorState onRetry={() => void mathQuery.refetch()} />
+        ) : mathQuery.isLoading ? (
+          <AdminMathLoadingState />
+        ) : (
+          <SimulatorPanel versions={math.versions} cards={data.scratchcards} />
+        )}
       </TabsContent>
     </Tabs>
   );
@@ -667,6 +686,31 @@ function AdminLoadingState() {
     <Card aria-busy="true">
       <CardContent className="flex min-h-40 items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" /> Carregando administração…
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminMathLoadingState() {
+  return (
+    <Card aria-busy="true">
+      <CardContent className="flex min-h-40 items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Carregando configuração matemática…
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminMathErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-6">
+        <p role="alert" className="text-destructive">
+          Não foi possível carregar a configuração matemática.
+        </p>
+        <Button variant="outline" onClick={onRetry}>
+          <RefreshCw className="size-4" /> Tentar novamente
+        </Button>
       </CardContent>
     </Card>
   );
