@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, useProfile } from "@/hooks/useProfile";
 import { useSpecialScratchStatus } from "@/hooks/useSpecialScratchStatus";
+import { scratchRarityPresentation, type ScratchRarity } from "@/components/ScratchCard";
 
 type Props = { onNavigate: (tab: string) => void };
 
@@ -14,7 +15,12 @@ type HighlightCard = {
   title: string;
   price: number;
   rarity_name: string;
+  rarity_slug: ScratchRarity;
 };
+
+function isScratchRarity(value: unknown): value is ScratchRarity {
+  return value === "bronze" || value === "prata" || value === "ouro" || value === "diamante";
+}
 
 function parseHighlightCards(value: unknown): HighlightCard[] {
   if (!Array.isArray(value)) return [];
@@ -26,11 +32,20 @@ function parseHighlightCards(value: unknown): HighlightCard[] {
       typeof raw.id !== "string" ||
       typeof raw.title !== "string" ||
       typeof raw.rarity_name !== "string" ||
+      !isScratchRarity(raw.rarity_slug) ||
       !Number.isFinite(price)
     ) {
       return [];
     }
-    return [{ id: raw.id, title: raw.title, price, rarity_name: raw.rarity_name }];
+    return [
+      {
+        id: raw.id,
+        title: raw.title,
+        price,
+        rarity_name: raw.rarity_name,
+        rarity_slug: raw.rarity_slug,
+      },
+    ];
   });
 }
 
@@ -162,17 +177,32 @@ export function HomeTab({ onNavigate }: Props) {
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {cards.map((card) => (
-            <Card key={card.id} className="min-w-0">
-              <CardContent className="p-3">
-                <strong className="block truncate text-sm">{card.title}</strong>
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                  <Badge variant="secondary">{formatBRL(card.price)}</Badge>
-                  <Badge variant="outline">{card.rarity_name}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {cards.map((card) => {
+            const artworkUrl = scratchRarityPresentation[card.rarity_slug].artworkUrl;
+            return (
+              <Card key={card.id} className="group relative min-w-0 overflow-hidden">
+                {artworkUrl && (
+                  <img
+                    src={artworkUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 size-full object-cover opacity-25 transition-opacity duration-300 group-hover:opacity-35"
+                  />
+                )}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-card/70"
+                />
+                <CardContent className="relative p-3">
+                  <strong className="block truncate text-sm">{card.title}</strong>
+                  <div className="mt-2 flex flex-wrap items-center gap-1">
+                    <Badge variant="secondary">{formatBRL(card.price)}</Badge>
+                    <Badge variant="outline">{card.rarity_name}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 

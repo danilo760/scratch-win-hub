@@ -20,6 +20,7 @@ export const scratchRarityPresentation: Record<
     iconClass: string;
     ornamentClass: string;
     desktopParticles: number;
+    artworkUrl?: string;
   }
 > = {
   bronze: {
@@ -33,6 +34,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-amber-600 dark:text-amber-300",
     ornamentClass: "from-amber-200/10 via-transparent to-orange-950/20",
     desktopParticles: 0,
+    artworkUrl: "/assets/scratch/bronze.webp",
   },
   prata: {
     surface: "from-slate-300 via-zinc-500 to-slate-700",
@@ -44,6 +46,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-slate-500 dark:text-slate-200",
     ornamentClass: "from-white/25 via-transparent to-slate-900/20",
     desktopParticles: 2,
+    artworkUrl: "/assets/scratch/prata.webp",
   },
   ouro: {
     surface: "from-yellow-300 via-amber-500 to-yellow-700",
@@ -56,6 +59,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-amber-500 dark:text-amber-200",
     ornamentClass: "from-yellow-100/30 via-transparent to-amber-900/20",
     desktopParticles: 4,
+    artworkUrl: "/assets/scratch/ouro.webp",
   },
   diamante: {
     surface: "from-cyan-200 via-sky-400 to-indigo-700",
@@ -68,6 +72,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-cyan-500 dark:text-cyan-200",
     ornamentClass: "from-white/35 via-cyan-100/10 to-indigo-950/20",
     desktopParticles: 8,
+    artworkUrl: "/assets/scratch/diamante.webp",
   },
   misteriosa: {
     surface: "from-violet-950 via-fuchsia-700 to-indigo-950",
