@@ -170,6 +170,18 @@ export function StoreTab() {
             {item.image_url && (
               <img src={item.image_url} alt="" className="h-36 w-full object-cover" />
             )}
+            {!item.image_url && (
+              <div
+                aria-hidden="true"
+                className="relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 via-card to-accent/15"
+              >
+                <div className="absolute -right-8 -top-8 size-28 rounded-full border border-primary/20 bg-primary/10" />
+                <div className="absolute -bottom-10 -left-5 size-32 rounded-full border border-accent/20 bg-accent/10" />
+                <div className="relative flex size-14 items-center justify-center rounded-2xl border border-accent/30 bg-card/80 shadow-lg">
+                  <Gift className="size-7 text-accent" />
+                </div>
+              </div>
+            )}
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Gift className="size-5 text-accent" />
