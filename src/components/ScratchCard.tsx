@@ -90,6 +90,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-fuchsia-500 dark:text-fuchsia-200",
     ornamentClass: "from-fuchsia-200/25 via-transparent to-violet-950/30",
     desktopParticles: 6,
+    artworkUrl: "/assets/scratch/misteriosa.webp",
     scratchSurface: ["#d946ef", "#312e81"],
   },
 };
