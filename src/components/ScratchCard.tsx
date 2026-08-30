@@ -21,6 +21,7 @@ export const scratchRarityPresentation: Record<
     ornamentClass: string;
     desktopParticles: number;
     artworkUrl?: string;
+    scratchSurface: [string, string];
   }
 > = {
   bronze: {
@@ -35,6 +36,7 @@ export const scratchRarityPresentation: Record<
     ornamentClass: "from-amber-200/10 via-transparent to-orange-950/20",
     desktopParticles: 0,
     artworkUrl: "/assets/scratch/bronze.webp",
+    scratchSurface: ["#b4652f", "#4a2110"],
   },
   prata: {
     surface: "from-slate-300 via-zinc-500 to-slate-700",
@@ -47,6 +49,7 @@ export const scratchRarityPresentation: Record<
     ornamentClass: "from-white/25 via-transparent to-slate-900/20",
     desktopParticles: 2,
     artworkUrl: "/assets/scratch/prata.webp",
+    scratchSurface: ["#d2d8e0", "#475569"],
   },
   ouro: {
     surface: "from-yellow-300 via-amber-500 to-yellow-700",
@@ -60,6 +63,7 @@ export const scratchRarityPresentation: Record<
     ornamentClass: "from-yellow-100/30 via-transparent to-amber-900/20",
     desktopParticles: 4,
     artworkUrl: "/assets/scratch/ouro.webp",
+    scratchSurface: ["#f6c343", "#8a4a06"],
   },
   diamante: {
     surface: "from-cyan-200 via-sky-400 to-indigo-700",
@@ -73,6 +77,7 @@ export const scratchRarityPresentation: Record<
     ornamentClass: "from-white/35 via-cyan-100/10 to-indigo-950/20",
     desktopParticles: 8,
     artworkUrl: "/assets/scratch/diamante.webp",
+    scratchSurface: ["#75dfff", "#1e3a8a"],
   },
   misteriosa: {
     surface: "from-violet-950 via-fuchsia-700 to-indigo-950",
@@ -85,6 +90,7 @@ export const scratchRarityPresentation: Record<
     iconClass: "text-fuchsia-500 dark:text-fuchsia-200",
     ornamentClass: "from-fuchsia-200/25 via-transparent to-violet-950/30",
     desktopParticles: 6,
+    scratchSurface: ["#d946ef", "#312e81"],
   },
 };
 
@@ -147,13 +153,25 @@ export function ScratchCard({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#9CA3AF";
+    const scratchGradient = ctx.createLinearGradient(0, 0, width, height);
+    scratchGradient.addColorStop(0, theme.scratchSurface[0]);
+    scratchGradient.addColorStop(1, theme.scratchSurface[1]);
+    ctx.fillStyle = scratchGradient;
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = "#374151";
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = "#ffffff";
+    for (let offset = -height; offset < width; offset += 28) {
+      ctx.fillRect(offset, 0, 8, height);
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
+    ctx.shadowBlur = 3;
     ctx.font = "bold 22px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("RASPE AQUI", width / 2, height / 2);
+    ctx.shadowBlur = 0;
 
     revealedRef.current = false;
     setRevealed(false);
@@ -163,7 +181,7 @@ export function ScratchCard({
       if (progressFrame.current !== null) cancelAnimationFrame(progressFrame.current);
       progressFrame.current = null;
     };
-  }, [prize, pointsEarned]);
+  }, [prize, pointsEarned, theme]);
 
   const checkProgress = () => {
     if (revealedRef.current) return;
@@ -210,6 +228,15 @@ export function ScratchCard({
         data-visual-rarity={visualRarity}
         className={`relative h-[150px] w-full max-w-[300px] overflow-hidden rounded-xl border bg-gradient-to-br ${theme.surface} ${theme.border} ${theme.glow}`}
       >
+        {theme.artworkUrl && (
+          <img
+            src={theme.artworkUrl}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 size-full object-cover opacity-45"
+          />
+        )}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/20" />
         <div
           aria-hidden
           data-effect-tier="mobile"
