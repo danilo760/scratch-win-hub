@@ -253,6 +253,15 @@ export function GameTab() {
               data-rarity={card.rarity_slug}
               className={`group relative overflow-hidden ${theme.optionClass}`}
             >
+              {theme.artworkUrl && (
+                <img
+                  src={theme.artworkUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 size-full object-cover opacity-20 transition-opacity duration-300 group-hover:opacity-30"
+                />
+              )}
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-card/70" />
               <div
                 aria-hidden
                 className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${theme.surface}`}
