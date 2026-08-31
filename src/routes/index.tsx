@@ -197,7 +197,7 @@ function AuthPage() {
                           disabled={formDisabled}
                         >
                           {loading && <Loader2 className="size-4 animate-spin" />}
-                          {mode === "login" ? "Entrar e jogar" : "Criar minha conta"}
+                          {mode === "login" ? "Entrar" : "Criar conta"}
                         </Button>
                       </form>
                     </TabsContent>
