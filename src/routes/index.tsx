@@ -105,7 +105,8 @@ function AuthPage() {
                   <Sparkles className="size-3.5" /> EXPERIÊNCIA DE RECOMPENSAS
                 </p>
                 <h1 className="max-w-md text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl">
-                  Sua próxima recompensa está aqui.
+                  Raspadinha Online.
+                  <span className="block text-primary">Sua próxima recompensa está aqui.</span>
                 </h1>
                 <p className="max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
                   Escolha sua raspadinha, revele o resultado e acompanhe suas conquistas em uma
