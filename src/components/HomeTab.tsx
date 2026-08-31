@@ -1,4 +1,4 @@
-import { Gift, ShieldCheck, Sparkles, Store, Trophy, UserCircle } from "lucide-react";
+import { ArrowRight, Dices, Gift, ShieldCheck, Sparkles, Store, Trophy, UserCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -121,18 +121,16 @@ export function HomeTab({ onNavigate }: Props) {
 
   return (
     <div className="space-y-6 pb-6">
-      <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-card to-primary/10">
-        <CardContent className="flex items-center justify-between gap-4 p-5">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Olá, {profile?.email?.split("@")[0] ?? "jogador"}
-            </p>
-            <h1 className="mt-1 text-2xl font-black">{profile?.points ?? 0} pontos</h1>
-            <p className="text-xs text-muted-foreground">
-              Saldo {formatBRL(profile?.balance ?? 0)} · Nível e XP no seu perfil
-            </p>
+      <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-emerald-950 via-card to-card shadow-[0_18px_50px_rgba(16,185,129,0.12)]">
+        <img src={scratchRarityPresentation.diamante.artworkUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 size-72 rotate-12 object-cover opacity-20 sm:-right-16 sm:-top-16 sm:size-80" />
+        <CardContent className="relative flex items-center justify-between gap-4 p-5 sm:p-7">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-muted-foreground">Olá, {profile?.email?.split("@")[0] ?? "jogador"}</p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{profile?.points ?? 0} pontos</h1>
+            <p className="text-xs text-muted-foreground">Saldo {formatBRL(profile?.balance ?? 0)} · Nível e XP no seu perfil</p>
+            <Button className="mt-5 h-10 rounded-xl" variant="glow" onClick={() => onNavigate("scratch")}><Dices className="size-4" /> Jogar agora</Button>
           </div>
-          <UserCircle className="size-12 text-primary" aria-hidden="true" />
+          <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 sm:flex"><UserCircle className="size-8 text-primary" aria-hidden="true" /></div>
         </CardContent>
       </Card>
 
@@ -173,7 +171,7 @@ export function HomeTab({ onNavigate }: Props) {
             <Sparkles className="size-5 text-accent" /> Destaques
           </h2>
           <Button variant="ghost" size="sm" onClick={() => onNavigate("scratch")}>
-            Ver todas
+            Ver todas <ArrowRight className="size-4" />
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
