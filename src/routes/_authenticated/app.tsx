@@ -259,15 +259,18 @@ function MyRewards({ onOpenStore }: { onOpenStore: () => void }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden border-primary/25 bg-gradient-to-br from-emerald-950/35 via-card to-card">
+      <CardHeader className="border-b border-white/10 bg-background/20">
         <CardTitle>Meus Prêmios</CardTitle>
         <CardDescription>Solicitações, protocolos e andamento das entregas.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {data?.length ? (
           data.map((reward) => (
-            <div key={reward.id} className="flex items-center gap-3 rounded-lg border p-3">
+            <div
+              key={reward.id}
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background/35 p-3 transition-colors hover:bg-background/55"
+            >
               {reward.item_image_url_snapshot && (
                 <img
                   src={reward.item_image_url_snapshot}
@@ -372,8 +375,8 @@ function ProfilePreferences() {
   };
 
   return (
-    <Card className="max-w-xl">
-      <CardHeader>
+    <Card className="max-w-xl overflow-hidden border-primary/25 bg-gradient-to-br from-emerald-950/35 via-card to-card">
+      <CardHeader className="border-b border-white/10 bg-background/20">
         <CardTitle>Perfil público</CardTitle>
         <CardDescription>Controle o que outras pessoas podem ver no seu perfil.</CardDescription>
       </CardHeader>

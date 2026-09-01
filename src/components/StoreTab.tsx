@@ -160,72 +160,96 @@ export function StoreTab() {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((item) => {
-        const noStock = item.stock_available <= 0;
-        const noPoints = (profile?.points ?? 0) < item.points_cost;
-        const limitReached = item.redeemed_count >= item.per_user_limit;
-        return (
-          <Card key={item.id} className="flex flex-col overflow-hidden">
-            {item.image_url && (
-              <img src={item.image_url} alt="" className="h-36 w-full object-cover" />
-            )}
-            {!item.image_url && (
-              <div
-                aria-hidden="true"
-                className="relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 via-card to-accent/15"
-              >
-                <div className="absolute -right-8 -top-8 size-28 rounded-full border border-primary/20 bg-primary/10" />
-                <div className="absolute -bottom-10 -left-5 size-32 rounded-full border border-accent/20 bg-accent/10" />
-                <div className="relative flex size-14 items-center justify-center rounded-2xl border border-accent/30 bg-card/80 shadow-lg">
-                  <Gift className="size-7 text-accent" />
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-accent/30 bg-gradient-to-br from-amber-950/50 via-card to-card px-5 py-6 sm:px-7">
+        <Gift className="absolute -right-4 -top-4 size-28 text-accent/10" aria-hidden="true" />
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+            Loja de recompensas
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">
+            Troque seus pontos por prêmios.
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Você tem <strong className="text-foreground">{profile?.points ?? 0} pontos</strong>{" "}
+            disponíveis para resgate.
+          </p>
+        </div>
+      </section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => {
+          const noStock = item.stock_available <= 0;
+          const noPoints = (profile?.points ?? 0) < item.points_cost;
+          const limitReached = item.redeemed_count >= item.per_user_limit;
+          return (
+            <Card
+              key={item.id}
+              className="group flex min-h-[25rem] flex-col overflow-hidden border-white/10 transition-transform duration-300 hover:-translate-y-1"
+            >
+              {item.image_url && (
+                <img
+                  src={item.image_url}
+                  alt=""
+                  className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              )}
+              {!item.image_url && (
+                <div
+                  aria-hidden="true"
+                  className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 via-card to-accent/15"
+                >
+                  <div className="absolute -right-8 -top-8 size-28 rounded-full border border-primary/20 bg-primary/10" />
+                  <div className="absolute -bottom-10 -left-5 size-32 rounded-full border border-accent/20 bg-accent/10" />
+                  <div className="relative flex size-14 items-center justify-center rounded-2xl border border-accent/30 bg-card/80 shadow-lg">
+                    <Gift className="size-7 text-accent" />
+                  </div>
                 </div>
-              </div>
-            )}
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Gift className="size-5 text-accent" />
-                {item.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-between gap-4">
-              <p className="text-sm text-muted-foreground">{item.description}</p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xl font-black text-accent">{item.points_cost} pts</span>
-                  <Badge variant={noStock ? "destructive" : "secondary"} className="gap-1">
-                    <Package className="size-3.5" />
-                    {noStock
-                      ? "ESGOTADO"
-                      : item.stock_available <= 3
-                        ? `🔥 Restam apenas ${item.stock_available}`
-                        : `${item.stock_available} em estoque`}
-                  </Badge>
+              )}
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Gift className="size-5 text-accent" />
+                  {item.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col justify-between gap-4">
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xl font-black text-accent">{item.points_cost} pts</span>
+                    <Badge variant={noStock ? "destructive" : "secondary"} className="gap-1">
+                      <Package className="size-3.5" />
+                      {noStock
+                        ? "ESGOTADO"
+                        : item.stock_available <= 3
+                          ? `🔥 Restam apenas ${item.stock_available}`
+                          : `${item.stock_available} em estoque`}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Limite por usuário: {item.redeemed_count}/{item.per_user_limit}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Limite por usuário: {item.redeemed_count}/{item.per_user_limit}
-                </p>
-              </div>
-              <Button
-                variant="glow"
-                className="w-full"
-                disabled={busyId === item.id || noStock || noPoints || limitReached}
-                onClick={() => redeem(item.id)}
-              >
-                {busyId === item.id ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : limitReached ? (
-                  "Limite atingido"
-                ) : noPoints ? (
-                  "Pontos insuficientes"
-                ) : (
-                  "Resgatar Item"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      })}
+                <Button
+                  variant="glow"
+                  className="h-11 w-full rounded-xl"
+                  disabled={busyId === item.id || noStock || noPoints || limitReached}
+                  onClick={() => redeem(item.id)}
+                >
+                  {busyId === item.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : limitReached ? (
+                    "Limite atingido"
+                  ) : noPoints ? (
+                    "Pontos insuficientes"
+                  ) : (
+                    "Resgatar Item"
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
