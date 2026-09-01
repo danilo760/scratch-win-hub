@@ -1,4 +1,13 @@
-import { ArrowRight, Dices, Gift, ShieldCheck, Sparkles, Store, Trophy, UserCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Dices,
+  Gift,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Trophy,
+  UserCircle,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -153,14 +162,22 @@ export function HomeTab({ onNavigate }: Props) {
         </CardContent>
       </Card>
 
-      <Card className={specialFailed ? "border-destructive/30" : "border-accent/40"}>
-        <CardHeader>
+      <Card
+        className={`relative overflow-hidden ${specialFailed ? "border-destructive/30" : "border-accent/40 bg-gradient-to-br from-amber-950/30 via-card to-card"}`}
+      >
+        <img
+          src={scratchRarityPresentation.ouro.artworkUrl}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-20 -top-16 size-60 object-cover opacity-15"
+        />
+        <CardHeader className="relative">
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-accent" /> Raspadinha diária
           </CardTitle>
           <CardDescription>{dailyDescription}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="relative space-y-3">
           {specialFailed && (
             <Badge variant="outline" className="border-destructive/40 text-destructive">
               Erro ao verificar disponibilidade
@@ -174,7 +191,7 @@ export function HomeTab({ onNavigate }: Props) {
             !specialStatus?.daily_claimed_today &&
             !specialStatus?.daily_configured && <Badge variant="secondary">Em breve</Badge>}
           <Button
-            className="w-full"
+            className="h-11 w-full rounded-xl"
             variant={specialFailed ? "outline" : "default"}
             disabled={specialFailed ? specialFetching : !canOpenDaily}
             onClick={handleDailyAction}
@@ -185,10 +202,15 @@ export function HomeTab({ onNavigate }: Props) {
       </Card>
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-xl font-black">
-            <Sparkles className="size-5 text-accent" /> Destaques
-          </h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-black">
+              <Sparkles className="size-5 text-accent" /> Destaques
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Escolha a sua próxima chance de ganhar.
+            </p>
+          </div>
           <Button variant="ghost" size="sm" onClick={() => onNavigate("scratch")}>
             Ver todas <ArrowRight className="size-4" />
           </Button>
@@ -197,24 +219,29 @@ export function HomeTab({ onNavigate }: Props) {
           {cards.map((card) => {
             const artworkUrl = scratchRarityPresentation[card.rarity_slug].artworkUrl;
             return (
-              <Card key={card.id} className="group relative min-w-0 overflow-hidden">
+              <Card
+                key={card.id}
+                className="group relative min-w-0 overflow-hidden border-white/10 transition-transform duration-300 hover:-translate-y-1"
+              >
                 {artworkUrl && (
                   <img
                     src={artworkUrl}
                     alt=""
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 size-full object-cover opacity-25 transition-opacity duration-300 group-hover:opacity-35"
+                    className="pointer-events-none absolute inset-0 size-full object-cover opacity-35 transition-opacity duration-300 group-hover:opacity-50"
                   />
                 )}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-card/70"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/75 to-card/25"
                 />
-                <CardContent className="relative p-3">
-                  <strong className="block truncate text-sm">{card.title}</strong>
+                <CardContent className="relative flex min-h-36 flex-col justify-end p-3 sm:min-h-40">
+                  <Badge className="mb-auto w-fit" variant="outline">
+                    {card.rarity_name}
+                  </Badge>
+                  <strong className="mt-5 block truncate text-sm">{card.title}</strong>
                   <div className="mt-2 flex flex-wrap items-center gap-1">
                     <Badge variant="secondary">{formatBRL(card.price)}</Badge>
-                    <Badge variant="outline">{card.rarity_name}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -223,8 +250,16 @@ export function HomeTab({ onNavigate }: Props) {
         </div>
       </section>
 
-      <Card className={specialFailed ? "border-destructive/30" : undefined}>
-        <CardHeader>
+      <Card
+        className={`relative overflow-hidden ${specialFailed ? "border-destructive/30" : "border-fuchsia-400/30 bg-gradient-to-br from-violet-950/35 via-card to-card"}`}
+      >
+        <img
+          src={scratchRarityPresentation.misteriosa.artworkUrl}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-16 -top-12 size-56 object-cover opacity-20"
+        />
+        <CardHeader className="relative">
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5 text-primary" /> Raspadinha misteriosa
           </CardTitle>
@@ -238,7 +273,7 @@ export function HomeTab({ onNavigate }: Props) {
                   : "Nenhum pool misterioso está publicado no momento."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="relative space-y-3">
           {specialFailed ? (
             <Badge variant="outline" className="border-destructive/40 text-destructive">
               Erro ao verificar disponibilidade
@@ -249,7 +284,7 @@ export function HomeTab({ onNavigate }: Props) {
           )}
           <Button
             variant="outline"
-            className="w-full"
+            className="h-11 w-full rounded-xl"
             disabled={
               specialFailed ? specialFetching : specialLoading || !specialStatus?.mystery_available
             }
