@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Dices,
@@ -26,6 +27,36 @@ type HighlightCard = {
   rarity_name: string;
   rarity_slug: ScratchRarity;
 };
+
+const promoSlides = [
+  {
+    eyebrow: "COMECE AQUI",
+    title: "Sua próxima raspadinha está a um toque.",
+    description: "Escolha uma experiência, revele o resultado e acompanhe seus pontos.",
+    action: "Ver raspadinhas",
+    tab: "scratch",
+    artworkUrl: "/assets/scratch/diamante.webp",
+    artworkClass: "from-cyan-500/20 via-card to-card",
+  },
+  {
+    eyebrow: "CORTESIA DIÁRIA",
+    title: "Volte todo dia para uma nova chance.",
+    description: "A raspadinha diária fica disponível uma vez por dia quando estiver publicada.",
+    action: "Ver diária",
+    tab: "daily",
+    artworkUrl: "/assets/scratch/ouro.webp",
+    artworkClass: "from-amber-500/20 via-card to-card",
+  },
+  {
+    eyebrow: "EXPERIÊNCIA MISTERIOSA",
+    title: "Uma revelação diferente espera por você.",
+    description: "Abra a misteriosa quando houver um pool publicado.",
+    action: "Explorar misteriosa",
+    tab: "mystery",
+    artworkUrl: "/assets/scratch/misteriosa.webp",
+    artworkClass: "from-fuchsia-500/20 via-card to-card",
+  },
+] as const;
 
 function isScratchRarity(value: unknown): value is ScratchRarity {
   return value === "bronze" || value === "prata" || value === "ouro" || value === "diamante";
@@ -59,6 +90,7 @@ function parseHighlightCards(value: unknown): HighlightCard[] {
 }
 
 export function HomeTab({ onNavigate }: Props) {
+  const [activePromo, setActivePromo] = useState(0);
   const { data: profile } = useProfile();
   const {
     data: specialStatus,
@@ -86,6 +118,14 @@ export function HomeTab({ onNavigate }: Props) {
 
   const isAdmin = profile?.admin_role === "admin" || profile?.admin_role === "admin_master";
   const specialFailed = Boolean(specialError);
+  const promo = promoSlides[activePromo] ?? promoSlides[0]!;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActivePromo((current) => (current + 1) % promoSlides.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const dailyDescription = specialLoading
     ? "Verificando a disponibilidade da cortesia diária…"
@@ -130,34 +170,50 @@ export function HomeTab({ onNavigate }: Props) {
 
   return (
     <div className="space-y-6 pb-6">
-      <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-emerald-950 via-card to-card shadow-[0_18px_50px_rgba(16,185,129,0.12)]">
+      <Card
+        className={`relative min-h-72 overflow-hidden border-primary/30 bg-gradient-to-br shadow-[0_18px_50px_rgba(16,185,129,0.12)] ${promo.artworkClass}`}
+      >
         <img
-          src={scratchRarityPresentation.diamante.artworkUrl}
+          src={promo.artworkUrl}
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute -right-24 -top-24 size-72 rotate-12 object-cover opacity-20 sm:-right-16 sm:-top-16 sm:size-80"
         />
         <CardContent className="relative flex items-center justify-between gap-4 p-5 sm:p-7">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-muted-foreground">
-              Olá, {profile?.email?.split("@")[0] ?? "jogador"}
+          <div className="min-w-0 max-w-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+              {promo.eyebrow}
             </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
-              {profile?.points ?? 0} pontos
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Saldo {formatBRL(profile?.balance ?? 0)} · Nível e XP no seu perfil
-            </p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{promo.title}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{promo.description}</p>
             <Button
               className="mt-5 h-10 rounded-xl"
               variant="glow"
-              onClick={() => onNavigate("scratch")}
+              onClick={() => onNavigate(promo.tab)}
             >
-              <Dices className="size-4" /> Jogar agora
+              <Dices className="size-4" /> {promo.action}
             </Button>
+            <div className="mt-5 flex gap-2" aria-label="Banners promocionais">
+              {promoSlides.map((slide, index) => (
+                <button
+                  key={slide.eyebrow}
+                  type="button"
+                  aria-label={`Exibir banner ${index + 1}`}
+                  aria-current={index === activePromo}
+                  onClick={() => setActivePromo(index)}
+                  className={`h-2 rounded-full transition-all ${index === activePromo ? "w-7 bg-primary" : "w-2 bg-muted-foreground/40"}`}
+                />
+              ))}
+            </div>
           </div>
           <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 sm:flex">
             <UserCircle className="size-8 text-primary" aria-hidden="true" />
+          </div>
+          <div className="absolute bottom-5 right-7 hidden rounded-xl border border-white/10 bg-background/50 px-4 py-2 text-right backdrop-blur sm:block">
+            <p className="text-lg font-black">{profile?.points ?? 0} pontos</p>
+            <p className="text-xs text-muted-foreground">
+              Saldo {formatBRL(profile?.balance ?? 0)}
+            </p>
           </div>
         </CardContent>
       </Card>
