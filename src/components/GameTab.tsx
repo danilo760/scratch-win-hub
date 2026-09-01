@@ -242,6 +242,20 @@ export function GameTab() {
 
   return (
     <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-emerald-950 via-card to-card px-5 py-6 shadow-[0_18px_50px_rgba(16,185,129,0.10)] sm:px-7">
+        <Sparkles className="absolute -right-4 -top-4 size-28 text-primary/10" aria-hidden="true" />
+        <div className="relative max-w-xl">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            Escolha sua sorte
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+            Qual raspadinha você vai revelar?
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Cada raridade tem uma experiência visual própria. Escolha, jogue e revele.
+          </p>
+        </div>
+      </section>
       <MysteryScratchPanel />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => {
@@ -251,40 +265,43 @@ export function GameTab() {
               key={card.id}
               data-testid={`scratch-option-${card.rarity_slug}`}
               data-rarity={card.rarity_slug}
-              className={`group relative overflow-hidden ${theme.optionClass}`}
+              className={`group relative min-h-72 overflow-hidden transition-transform duration-300 hover:-translate-y-1 ${theme.optionClass} ${theme.glow}`}
             >
               {theme.artworkUrl && (
                 <img
                   src={theme.artworkUrl}
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 size-full object-cover opacity-20 transition-opacity duration-300 group-hover:opacity-30"
+                  className="pointer-events-none absolute inset-0 size-full object-cover opacity-35 transition-opacity duration-300 group-hover:scale-105 group-hover:opacity-50"
                 />
               )}
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-card/70" />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/20"
+              />
               <div
                 aria-hidden
                 className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${theme.surface}`}
               />
-              <CardHeader>
+              <CardHeader className="relative pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Ticket className={`size-5 ${theme.iconClass}`} />
                   {card.title}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="relative flex h-[calc(18rem-5.5rem)] flex-col space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-2xl font-black text-success">{formatBRL(card.price)}</span>
                   <Badge variant="secondary" className={`capitalize ${theme.badgeClass}`}>
                     {card.rarity_name}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   Resultado calculado pela versão matemática publicada antes da revelação.
                 </p>
                 <Button
                   variant="glow"
-                  className="w-full"
+                  className="mt-auto h-11 w-full rounded-xl"
                   disabled={playingId === card.id}
                   onClick={() => play(card.id, card.title)}
                 >
