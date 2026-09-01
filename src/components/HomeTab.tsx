@@ -28,6 +28,8 @@ type HighlightCard = {
   rarity_slug: ScratchRarity;
 };
 
+type Popularity = { card_id: string; play_count: number };
+
 const promoSlides = [
   {
     eyebrow: "COMECE AQUI",
@@ -89,6 +91,18 @@ function parseHighlightCards(value: unknown): HighlightCard[] {
   });
 }
 
+function parsePopularity(value: unknown): Popularity[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const raw = entry as Record<string, unknown>;
+    const count = typeof raw.play_count === "number" ? raw.play_count : Number(raw.play_count);
+    return typeof raw.card_id === "string" && Number.isFinite(count) && count > 0
+      ? [{ card_id: raw.card_id, play_count: count }]
+      : [];
+  });
+}
+
 export function HomeTab({ onNavigate }: Props) {
   const [activePromo, setActivePromo] = useState(0);
   const { data: profile } = useProfile();
@@ -107,6 +121,14 @@ export function HomeTab({ onNavigate }: Props) {
       return parseHighlightCards(data).slice(0, 4);
     },
   });
+  const { data: popularity = [] } = useQuery({
+    queryKey: ["scratchcard-popularity"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_scratchcard_popularity_v1" as never);
+      if (error) throw error;
+      return parsePopularity(data);
+    },
+  });
   const { data: achievements = [] } = useQuery({
     queryKey: ["home-achievements"],
     queryFn: async () => {
@@ -119,6 +141,7 @@ export function HomeTab({ onNavigate }: Props) {
   const isAdmin = profile?.admin_role === "admin" || profile?.admin_role === "admin_master";
   const specialFailed = Boolean(specialError);
   const promo = promoSlides[activePromo] ?? promoSlides[0]!;
+  const mostPlayedId = popularity[0]?.card_id;
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -272,37 +295,42 @@ export function HomeTab({ onNavigate }: Props) {
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {cards.map((card) => {
-            const artworkUrl = scratchRarityPresentation[card.rarity_slug].artworkUrl;
-            return (
-              <Card
-                key={card.id}
-                className="group relative min-w-0 overflow-hidden border-white/10 transition-transform duration-300 hover:-translate-y-1"
-              >
-                {artworkUrl && (
-                  <img
-                    src={artworkUrl}
-                    alt=""
+          {[...cards]
+            .sort((a, b) => Number(b.id === mostPlayedId) - Number(a.id === mostPlayedId))
+            .map((card) => {
+              const artworkUrl = scratchRarityPresentation[card.rarity_slug].artworkUrl;
+              return (
+                <Card
+                  key={card.id}
+                  className="group relative min-w-0 overflow-hidden border-white/10 transition-transform duration-300 hover:-translate-y-1"
+                >
+                  {artworkUrl && (
+                    <img
+                      src={artworkUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 size-full object-cover opacity-35 transition-opacity duration-300 group-hover:opacity-50"
+                    />
+                  )}
+                  <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 size-full object-cover opacity-35 transition-opacity duration-300 group-hover:opacity-50"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/75 to-card/25"
                   />
-                )}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/75 to-card/25"
-                />
-                <CardContent className="relative flex min-h-36 flex-col justify-end p-3 sm:min-h-40">
-                  <Badge className="mb-auto w-fit" variant="outline">
-                    {card.rarity_name}
-                  </Badge>
-                  <strong className="mt-5 block truncate text-sm">{card.title}</strong>
-                  <div className="mt-2 flex flex-wrap items-center gap-1">
-                    <Badge variant="secondary">{formatBRL(card.price)}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <CardContent className="relative flex min-h-36 flex-col justify-end p-3 sm:min-h-40">
+                    <div className="mb-auto flex flex-wrap gap-1">
+                      <Badge variant="outline">{card.rarity_name}</Badge>
+                      {card.id === mostPlayedId && (
+                        <Badge variant="secondary">Mais escolhida</Badge>
+                      )}
+                    </div>
+                    <strong className="mt-5 block truncate text-sm">{card.title}</strong>
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                      <Badge variant="secondary">{formatBRL(card.price)}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
         </div>
       </section>
 
