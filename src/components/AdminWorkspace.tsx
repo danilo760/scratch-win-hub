@@ -21,6 +21,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1116,6 +1125,7 @@ function MysteryAdminPanel({
   );
   const [weight, setWeight] = useState("1");
   const [busy, setBusy] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!versions.some((version) => version.id === selectedVersion))
@@ -1124,6 +1134,7 @@ function MysteryAdminPanel({
 
   const selected = versions.find((version) => version.id === selectedVersion) ?? null;
   const validCards = cards.filter((card) => card.active && card.published_version_id);
+  const totalWeight = selected?.entries.reduce((total, entry) => total + entry.weight, 0) ?? 0;
 
   const create = async () => {
     if (!name.trim()) return;
@@ -1170,6 +1181,7 @@ function MysteryAdminPanel({
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
+    setPublishConfirmOpen(false);
     toast.success("Pool Misteriosa publicado e bloqueado para edição.");
   };
 
@@ -1199,6 +1211,7 @@ function MysteryAdminPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           <select
+            aria-label="Pool Misteriosa"
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={selectedVersion}
             onChange={(e) => setSelectedVersion(e.target.value)}
@@ -1253,7 +1266,7 @@ function MysteryAdminPanel({
                 <Button
                   className="w-full"
                   variant="glow"
-                  onClick={publish}
+                  onClick={() => setPublishConfirmOpen(true)}
                   disabled={busy || selected.entries.length === 0}
                 >
                   <Send className="size-4" /> Publicar pool
@@ -1263,6 +1276,47 @@ function MysteryAdminPanel({
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={publishConfirmOpen}
+        onOpenChange={(open) => {
+          if (!busy) setPublishConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publicar pool da Misteriosa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao confirmar, este DRAFT se torna PUBLISHED e o pool atualmente publicado, se houver,
+              passa a RETIRED. O pool publicado fica bloqueado para edição.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {selected && (
+            <div className="space-y-2 rounded-lg border bg-secondary/20 p-3 text-sm">
+              <strong className="block">{selected.name}</strong>
+              <p className="text-muted-foreground">
+                {selected.entries.length} entrada(s) · Peso total:{" "}
+                {totalWeight.toLocaleString("pt-BR")}
+              </p>
+              <div className="space-y-1">
+                {selected.entries.map((entry) => (
+                  <div key={entry.id} className="flex justify-between gap-3">
+                    <span className="min-w-0 truncate">{entry.scratchcard_title}</span>
+                    <span className="shrink-0 text-muted-foreground">peso {entry.weight}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <Button onClick={() => void publish()} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}{" "}
+              Confirmar publicação
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1278,6 +1332,7 @@ function MysteryEntryRow({
 }) {
   const [weight, setWeight] = useState(String(entry.weight));
   const [busy, setBusy] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   useEffect(() => setWeight(String(entry.weight)), [entry.weight]);
 
   const save = async () => {
@@ -1299,30 +1354,67 @@ function MysteryEntryRow({
     setBusy(false);
     if (error) return void toast.error(error.message);
     await onChanged();
+    setRemoveConfirmOpen(false);
     toast.success("Entrada removida.");
   };
   return (
-    <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_160px_auto]">
-      <span className="self-center text-sm">{entry.scratchcard_title}</span>
-      <Input
-        type="number"
-        min="0.0001"
-        step="0.0001"
-        value={weight}
-        disabled={readOnly}
-        onChange={(e) => setWeight(e.target.value)}
-      />
-      {!readOnly && (
-        <div className="flex gap-1">
-          <Button size="icon" variant="outline" onClick={save} disabled={busy}>
-            <Save className="size-4" />
-          </Button>
-          <Button size="icon" variant="destructive" onClick={remove} disabled={busy}>
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      )}
-    </div>
+    <>
+      <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_160px_auto]">
+        <span className="self-center text-sm">{entry.scratchcard_title}</span>
+        <Input
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          value={weight}
+          disabled={readOnly}
+          onChange={(e) => setWeight(e.target.value)}
+        />
+        {!readOnly && (
+          <div className="flex gap-1">
+            <Button size="icon" variant="outline" onClick={save} disabled={busy}>
+              <Save className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="destructive"
+              onClick={() => setRemoveConfirmOpen(true)}
+              disabled={busy}
+              aria-label="Remover entrada da Misteriosa"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <AlertDialog
+        open={removeConfirmOpen}
+        onOpenChange={(open) => {
+          if (!busy) setRemoveConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover entrada do DRAFT da Misteriosa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove a raspadinha do pool em edição e altera os pesos usados quando este
+              DRAFT for publicado. Revise a entrada antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border bg-secondary/20 p-3 text-sm">
+            <strong className="block">{entry.scratchcard_title}</strong>
+            <p className="mt-1 text-muted-foreground">Peso publicado no DRAFT: {entry.weight}</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}{" "}
+              Confirmar remoção
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

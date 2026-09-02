@@ -126,6 +126,9 @@ jobs:
       - name: Run Admin math confirmation gates
         run: node tests/admin-math-confirmations.e2e.mjs
 
+      - name: Run Admin Mystery confirmation gates
+        run: node tests/admin-mystery-confirmations.e2e.mjs
+
       - name: Collect application log
         if: always()
         run: |
